@@ -651,13 +651,16 @@
             if (submitAbsenBtn) submitAbsenBtn.disabled = true;
         }
 
-        function startCamera() {
+       // ==========================================
+// KODE UTAMA ABSENSI, KAMERA, & MANAGEMENT
+// ==========================================
+
+function startCamera() {
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
         .then((stream) => {
             videoStream = stream;
             if (video) {
                 video.srcObject = stream;
-                // Paksa pemutaran stream kamera secara langsung
                 video.play().catch((err) => {
                     console.log("Autoplay error:", err);
                 });
@@ -679,9 +682,13 @@ if (takePhotoBtn) {
     takePhotoBtn.addEventListener('click', () => {
         if (!video || !canvas) return;
         const context = canvas.getContext('2d');
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const w = video.videoWidth > 0 ? video.videoWidth : 640;
+        const h = video.videoHeight > 0 ? video.videoHeight : 480;
+        canvas.width = w;
+        canvas.height = h;
+        
+        context.drawImage(video, 0, 0, w, h);
 
         photoData = canvas.toDataURL('image/jpeg', 0.6);
         video.classList.add('hidden');
@@ -697,582 +704,582 @@ if (retakePhotoBtn) {
         if (canvas) canvas.classList.add('hidden');
         if (video) {
             video.classList.remove('hidden');
-            video.play(); // Pastikan video berputar kembali saat foto ulang
+            video.play().catch(e => console.log(e));
         }
         retakePhotoBtn.classList.add('hidden');
         if (takePhotoBtn) takePhotoBtn.classList.remove('hidden');
     });
 }
 
-    const absenForm = document.getElementById('absenForm');
-    if (absenForm) {
-        absenForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
+const absenForm = document.getElementById('absenForm');
+if (absenForm) {
+    absenForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
 
-            if (hasAbsenToday) {
-                showAlert("Anda sudah melakukan absensi hari ini!", "error");
-                return;
-            }
+        if (hasAbsenToday) {
+            showAlert("Anda sudah melakukan absensi hari ini!", "error");
+            return;
+        }
 
-            if (!isWithinRadius) {
-                showAlert("Anda berada di luar radius lokasi usaha!", "error");
-                return;
-            }
+        if (!isWithinRadius) {
+            showAlert("Anda berada di luar radius lokasi usaha!", "error");
+            return;
+        }
 
-            if (photoData === "-") {
-                showAlert("Silakan ambil foto selfie terlebih dahulu!", "error");
-                return;
-            }
+        if (photoData === "-") {
+            showAlert("Silakan ambil foto selfie terlebih dahulu!", "error");
+            return;
+        }
 
-            setLoading(true, 'submitAbsenBtn', 'Mengirim...');
+        setLoading(true, 'submitAbsenBtn', 'Mengirim...');
 
-            try {
-                const res = await sendRequest({
-                    action: 'absen',
-                    nama: currentUser ? currentUser.nama : '',
-                    divisi: currentUser ? currentUser.divisi : '',
-                    gajiPokok: currentUser ? currentUser.gajiPokok : 0,
-                    tipe: 'Masuk',
-                    status: 'Hadir',
-                    potongan: 0,
-                    foto: photoData,
-                    gps: gpsInput ? gpsInput.value : ''
-                });
-
-                if (res.status === 'success') {
-                    showAlert(res.message, 'success');
-                    
-                    // Langsung kunci fitur absensi & kamera
-                    lockAbsenFeature(true);
-
-                    setTimeout(() => {
-                        stopCamera();
-                        if (absenFormSection) absenFormSection.classList.add('hidden');
-                        if (menuAbsenSection) menuAbsenSection.classList.remove('hidden');
-                    }, 2000);
-                } else {
-                    showAlert(res.message, 'error');
-                }
-            } catch (err) {
-                showAlert('Gagal mengirim absensi.', 'error');
-            } finally {
-                setLoading(false, 'submitAbsenBtn', 'Kirim Absensi Kehadiran');
-            }
-        });
-    }
-    
-    // --- TAB MANAGEMENT ---
-    const tabRekapBtn = document.getElementById('tabRekapBtn');
-    const tabLogBtn = document.getElementById('tabLogBtn');
-    const tabUsersBtn = document.getElementById('tabUsersBtn');
-
-    if (tabRekapBtn) tabRekapBtn.addEventListener('click', function () { switchTab(this, 'rekapSection'); });
-    if (tabLogBtn) tabLogBtn.addEventListener('click', function () { switchTab(this, 'logSection'); });
-    if (tabUsersBtn) {
-        tabUsersBtn.addEventListener('click', function () {
-            switchTab(this, 'usersSection');
-            loadUsersData();
-        });
-    }
-
-    function switchTab(activeBtn, targetSectionId) {
-        [tabRekapBtn, tabLogBtn, tabUsersBtn].forEach(btn => {
-            if (btn) btn.classList.remove('active');
-        });
-        if (activeBtn) activeBtn.classList.add('active');
-
-        ['rekapSection', 'logSection', 'usersSection'].forEach(secId => {
-            const sec = document.getElementById(secId);
-            if (sec) sec.classList.add('hidden');
-        });
-
-        const targetSec = document.getElementById(targetSectionId);
-        if (targetSec) targetSec.classList.remove('hidden');
-    }
-
-    const refreshBtn = document.getElementById('refreshBtn');
-    if (refreshBtn) refreshBtn.addEventListener('click', loadAdminData);
-
-    async function loadAdminData() {
-        setLoading(true, 'refreshBtn', '...');
         try {
             const res = await sendRequest({
-                action: 'getAdminData',
-                startDate: startDateInput ? startDateInput.value : '',
-                endDate: endDateInput ? endDateInput.value : ''
+                action: 'absen',
+                nama: currentUser ? currentUser.nama : '',
+                divisi: currentUser ? currentUser.divisi : '',
+                gajiPokok: currentUser ? currentUser.gajiPokok : 0,
+                tipe: 'Masuk',
+                status: 'Hadir',
+                potongan: 0,
+                foto: photoData,
+                gps: gpsInput ? gpsInput.value : ''
             });
 
-            if (res.status === 'success') {
-                renderRekapTable(res.rekap);
-                renderLogTable(res.logs);
-                showAlert('', 'hide');
-            } else {
-                showAlert(res.message, 'error');
-            }
-        } catch (err) {
-            showAlert('Gagal mengambil data admin.', 'error');
-        } finally {
-            setLoading(false, 'refreshBtn', 'Tampilkan');
-        }
-    }
-
-    function renderRekapTable(rekapData) {
-        const tbody = document.getElementById('rekapTableBody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        if (!rekapData || rekapData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data rekap</td></tr>';
-            return;
-        }
-
-        rekapData.forEach(item => {
-            let statusArr = [];
-            if (item.hadir > 0) statusArr.push(`<span style="color:#10b981; font-weight:600;">Hadir: ${item.hadir} Hari</span>`);
-            if (item.pulangCepat > 0) statusArr.push(`<span style="color:#f59e0b; font-weight:600;">Pulang Cepat: ${item.pulangCepat} Hari</span>`);
-            if (item.izin > 0) statusArr.push(`<span style="color:#3b82f6; font-weight:600;">Izin: ${item.izin} Hari</span>`);
-            if (item.sakit > 0) statusArr.push(`<span style="color:#8b5cf6; font-weight:600;">Sakit: ${item.sakit} Hari</span>`);
-            if (item.alfa > 0) statusArr.push(`<span style="color:#ef4444; font-weight:600;">Alfa: ${item.alfa} Hari</span>`);
-
-            const statusStr = statusArr.length > 0 ? statusArr.join(' | ') : '-';
-
-            tbody.innerHTML += `
-                <tr>
-                    <td><strong>${item.nama}</strong></td>
-                    <td>Rp ${formatRupiah(item.gajiPokok)}</td>
-                    <td>${statusStr}</td>
-                    <td style="color:#ef4444; font-weight:600;">Rp ${formatRupiah(item.totalPotongan)}</td>
-                    <td style="color:#10b981; font-weight:700;">Rp ${formatRupiah(item.gajiAkhir)}</td>
-                </tr>
-            `;
-        });
-    }
-
-    function renderLogTable(logs) {
-        const tbody = document.getElementById('logTableBody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        if (!logs || logs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Tidak ada log absensi pada periode ini</td></tr>';
-            return;
-        }
-
-        logs.forEach(log => {
-            const fotoHtml = (log.foto && log.foto !== '-')
-                ? `<a href="${log.foto}" target="_blank" style="color: #2563eb; text-decoration: underline;">Lihat Foto</a>`
-                : '-';
-
-            const gpsHtml = (log.gps && log.gps !== '-')
-                ? `<a href="${log.gps}" target="_blank" style="color: #2563eb; text-decoration: underline;">Lihat Lokasi</a>`
-                : '-';
-
-            const pot = Number(log.potongan) || 0;
-
-            tbody.innerHTML += `
-                <tr>
-                    <td><strong>${log.nama || '-'}</strong></td>
-                    <td>${log.divisi || '-'}</td>
-                    <td><strong>${log.tipe || 'Masuk'}</strong></td>
-                    <td><span class="badge">${log.status || 'Hadir'}</span></td>
-                    <td>${log.waktu || '-'}</td>
-                    <td>${log.hari || '-'}</td>
-                    <td style="color:${pot > 0 ? '#ef4444' : '#10b981'}; font-weight:600;">Rp ${formatRupiah(pot)}</td>
-                    <td>${fotoHtml}</td>
-                    <td>${gpsHtml}</td>
-                    <td class="action-col" style="text-align:center;">
-                        <button class="btn btn-primary" style="padding:4px 8px; font-size:0.8rem; width:auto; margin-right:4px;" onclick="openEditLogModal(${log.rowIndex}, '${log.nama}', '${log.status}', ${pot})">
-                            ✏️ Edit
-                        </button>
-                        <button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem; width:auto;" onclick="deleteSingleLog(${log.rowIndex})">
-                            🗑️ Hapus
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-    }
-
-    // --- EDIT LOG FUNCTIONS ---
-    function openEditLogModal(rowIndex, nama, statusSaatIni, potonganSaatIni) {
-        const editIndex = document.getElementById('editModalRowIndex');
-        const modalNama = document.getElementById('modalNamaKaryawan');
-        const modalStatus = document.getElementById('modalStatusAbsen');
-        const modalPotongan = document.getElementById('modalNominalPotongan');
-        const editModal = document.getElementById('editLogModal');
-
-        if (editIndex) editIndex.value = rowIndex;
-        if (modalNama) modalNama.innerText = nama;
-        if (modalStatus) modalStatus.value = statusSaatIni || 'Hadir';
-        if (modalPotongan) modalPotongan.value = potonganSaatIni || 0;
-        if (editModal) editModal.classList.remove('hidden');
-    }
-
-    function closeEditLogModal() {
-        const editModal = document.getElementById('editLogModal');
-        if (editModal) editModal.classList.add('hidden');
-    }
-
-    async function submitEditLog() {
-        const editIndex = document.getElementById('editModalRowIndex');
-        const modalStatus = document.getElementById('modalStatusAbsen');
-        const modalPotongan = document.getElementById('modalNominalPotongan');
-
-        const rowIndex = editIndex ? editIndex.value : '';
-        const statusVal = modalStatus ? modalStatus.value : 'Hadir';
-        const potonganVal = modalPotongan ? Number(modalPotongan.value) || 0 : 0;
-
-        setLoading(true, 'saveEditLogBtn', 'Menyimpan...');
-        try {
-            const res = await sendRequest({
-                action: 'editLogPotongan',
-                rowIndex: rowIndex,
-                status: statusVal,
-                potongan: potonganVal
-            });
-
-            if (res.status === 'success') {
-                showAlert('Data absensi berhasil diperbarui', 'success');
-                closeEditLogModal();
-                loadAdminData();
-            } else {
-                showAlert(res.message, 'error');
-            }
-        } catch (err) {
-            showAlert('Gagal memperbarui data absensi.', 'error');
-        } finally {
-            setLoading(false, 'saveEditLogBtn', 'Simpan');
-        }
-    }
-
-    async function deleteSingleLog(rowIndex) {
-        if (!confirm('Apakah Anda yakin ingin menghapus baris log ini?')) return;
-
-        setLoading(true, 'refreshBtn', '...');
-        try {
-            const res = await sendRequest({ action: 'deleteLog', rowIndex: rowIndex });
-            if (res.status === 'success') {
-                showAlert('Log berhasil dihapus', 'success');
-                loadAdminData();
-            } else {
-                showAlert(res.message, 'error');
-            }
-        } catch (err) {
-            showAlert('Gagal menghapus log.', 'error');
-        } finally {
-            setLoading(false, 'refreshBtn', 'Tampilkan');
-        }
-    }
-
-    const deleteRangeLogBtn = document.getElementById('deleteRangeLogBtn');
-    if (deleteRangeLogBtn) {
-        deleteRangeLogBtn.addEventListener('click', async function () {
-            const sDate = startDateInput ? startDateInput.value : '';
-            const eDate = endDateInput ? endDateInput.value : '';
-            if (!confirm(`PERINGATAN: Log absensi dari tanggal ${sDate} s/d ${eDate} akan dihapus. Lanjutkan?`)) return;
-
-            setLoading(true, 'deleteRangeLogBtn', 'Proses...');
-            try {
-                const res = await sendRequest({
-                    action: 'deleteRangeData',
-                    startDate: sDate,
-                    endDate: eDate
-                });
-
-                if (res.status === 'success') {
-                    showAlert(res.message, 'success');
-                    loadAdminData();
-                } else {
-                    showAlert(res.message, 'error');
-                }
-            } catch (err) {
-                showAlert('Gagal menghapus data periode.', 'error');
-            } finally {
-                setLoading(false, 'deleteRangeLogBtn', '🗓️ Hapus Log Periode Ini');
-            }
-        });
-    }
-
-    const deleteAllLogBtn = document.getElementById('deleteAllLogBtn');
-    if (deleteAllLogBtn) {
-        deleteAllLogBtn.addEventListener('click', async function () {
-            if (!confirm('PERINGATAN: SEMUA log absensi akan dihapus secara permanen. Lanjutkan?')) return;
-
-            setLoading(true, 'deleteAllLogBtn', 'Proses...');
-            try {
-                const res = await sendRequest({ action: 'deleteAllLogs' });
-                if (res.status === 'success') {
-                    showAlert('Semua log absensi berhasil dihapus', 'success');
-                    loadAdminData();
-                } else {
-                    showAlert(res.message, 'error');
-                }
-            } catch (err) {
-                showAlert('Gagal menghapus semua log.', 'error');
-            } finally {
-                setLoading(false, 'deleteAllLogBtn', '🗑️ Hapus Semua Log');
-            }
-        });
-    }
-
-    // --- USER CRUD FUNCTIONS ---
-    async function loadUsersData() {
-        try {
-            const res = await sendRequest({ action: 'getUsers' });
-            if (res.status === 'success') {
-                cachedUsersData = res.users;
-                renderUsersTable(res.users);
-            } else {
-                showAlert(res.message, 'error');
-            }
-        } catch (err) {
-            showAlert('Gagal mengambil data pengguna.', 'error');
-        }
-    }
-
-    function renderUsersTable(users) {
-        const tbody = document.getElementById('usersTableBody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        if (!users || users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data pengguna</td></tr>';
-            return;
-        }
-
-        users.forEach(user => {
-            const userRole = user.role ? String(user.role).toLowerCase() : '';
-            tbody.innerHTML += `
-                <tr>
-                    <td><strong>${user.username}</strong></td>
-                    <td>${user.nama}</td>
-                    <td><span class="badge" style="background:${userRole === 'admin' ? '#ef4444' : '#3b82f6'}; color:white; padding:2px 8px; border-radius:4px; font-size:0.75rem;">${user.role}</span></td>
-                    <td>${user.divisi || '-'}</td>
-                    <td>Rp ${formatRupiah(user.gajiPokok)}</td>
-                    <td class="action-col" style="text-align:center;">
-                        <button class="btn btn-primary" style="padding:4px 8px; font-size:0.8rem; width:auto; margin-right:4px;" onclick="editUserModal(${user.rowIndex})">✏️ Edit</button>
-                        <button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem; width:auto;" onclick="deleteUser(${user.rowIndex})">🗑️ Hapus</button>
-                    </td>
-                </tr>
-            `;
-        });
-    }
-
-    function openUserModal() {
-        const title = document.getElementById('userModalTitle');
-        if (title) title.innerText = "Tambah User Baru";
-        
-        ['modalRowIndex', 'modalUsername', 'modalPassword', 'modalNama', 'modalDivisi', 'modalGajiPokok'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = "";
-        });
-        
-        const roleEl = document.getElementById('modalRole');
-        if (roleEl) roleEl.value = "User";
-
-        const userModal = document.getElementById('userModal');
-        if (userModal) userModal.classList.remove('hidden');
-    }
-
-    function editUserModal(rowIndex) {
-        const user = cachedUsersData.find(u => u.rowIndex === rowIndex);
-        if (!user) return;
-
-        const title = document.getElementById('userModalTitle');
-        if (title) title.innerText = "Edit User";
-
-        const fields = {
-            'modalRowIndex': user.rowIndex,
-            'modalUsername': user.username,
-            'modalPassword': user.password,
-            'modalNama': user.nama,
-            'modalRole': user.role,
-            'modalDivisi': user.divisi,
-            'modalGajiPokok': user.gajiPokok
-        };
-
-        Object.keys(fields).forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = fields[id] || '';
-        });
-
-        const userModal = document.getElementById('userModal');
-        if (userModal) userModal.classList.remove('hidden');
-    }
-
-    function closeUserModal() {
-        const userModal = document.getElementById('userModal');
-        if (userModal) userModal.classList.add('hidden');
-    }
-
-    const userForm = document.getElementById('userForm');
-    if (userForm) {
-        userForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
-            const rowIndexEl = document.getElementById('modalRowIndex');
-            const rowIndex = rowIndexEl ? rowIndexEl.value : '';
-            const action = rowIndex ? 'editUser' : 'addUser';
-
-            const payload = {
-                action: action,
-                rowIndex: rowIndex,
-                username: document.getElementById('modalUsername') ? document.getElementById('modalUsername').value.trim() : '',
-                password: document.getElementById('modalPassword') ? document.getElementById('modalPassword').value.trim() : '',
-                nama: document.getElementById('modalNama') ? document.getElementById('modalNama').value.trim() : '',
-                role: document.getElementById('modalRole') ? document.getElementById('modalRole').value : 'User',
-                divisi: document.getElementById('modalDivisi') ? document.getElementById('modalDivisi').value.trim() : '',
-                gajiPokok: document.getElementById('modalGajiPokok') ? document.getElementById('modalGajiPokok').value : 0
-            };
-
-            setLoading(true, 'saveUserBtn', 'Menyimpan...');
-
-            try {
-                const res = await sendRequest(payload);
-                if (res.status === 'success') {
-                    showAlert(res.message, 'success');
-                    closeUserModal();
-                    loadUsersData();
-                } else {
-                    showAlert(res.message, 'error');
-                }
-            } catch (err) {
-                showAlert('Gagal menyimpan data user.', 'error');
-            } finally {
-                setLoading(false, 'saveUserBtn', 'Simpan');
-            }
-        });
-    }
-
-    async function deleteUser(rowIndex) {
-        if (!confirm('Apakah Anda yakin ingin menghapus user ini?')) return;
-
-        try {
-            const res = await sendRequest({ action: 'deleteUser', rowIndex: rowIndex });
             if (res.status === 'success') {
                 showAlert(res.message, 'success');
+                lockAbsenFeature(true);
+
+                setTimeout(() => {
+                    stopCamera();
+                    if (absenFormSection) absenFormSection.classList.add('hidden');
+                    if (menuAbsenSection) menuAbsenSection.classList.remove('hidden');
+                }, 2000);
+            } else {
+                showAlert(res.message, 'error');
+            }
+        } catch (err) {
+            showAlert('Gagal mengirim absensi.', 'error');
+        } finally {
+            setLoading(false, 'submitAbsenBtn', 'Kirim Absensi Kehadiran');
+        }
+    });
+}
+
+// --- TAB MANAGEMENT ---
+const tabRekapBtn = document.getElementById('tabRekapBtn');
+const tabLogBtn = document.getElementById('tabLogBtn');
+const tabUsersBtn = document.getElementById('tabUsersBtn');
+
+if (tabRekapBtn) tabRekapBtn.addEventListener('click', function () { switchTab(this, 'rekapSection'); });
+if (tabLogBtn) tabLogBtn.addEventListener('click', function () { switchTab(this, 'logSection'); });
+if (tabUsersBtn) {
+    tabUsersBtn.addEventListener('click', function () {
+        switchTab(this, 'usersSection');
+        loadUsersData();
+    });
+}
+
+function switchTab(activeBtn, targetSectionId) {
+    [tabRekapBtn, tabLogBtn, tabUsersBtn].forEach(btn => {
+        if (btn) btn.classList.remove('active');
+    });
+    if (activeBtn) activeBtn.classList.add('active');
+
+    ['rekapSection', 'logSection', 'usersSection'].forEach(secId => {
+        const sec = document.getElementById(secId);
+        if (sec) sec.classList.add('hidden');
+    });
+
+    const targetSec = document.getElementById(targetSectionId);
+    if (targetSec) targetSec.classList.remove('hidden');
+}
+
+const refreshBtn = document.getElementById('refreshBtn');
+if (refreshBtn) refreshBtn.addEventListener('click', loadAdminData);
+
+async function loadAdminData() {
+    setLoading(true, 'refreshBtn', '...');
+    try {
+        const res = await sendRequest({
+            action: 'getAdminData',
+            startDate: startDateInput ? startDateInput.value : '',
+            endDate: endDateInput ? endDateInput.value : ''
+        });
+
+        if (res.status === 'success') {
+            renderRekapTable(res.rekap);
+            renderLogTable(res.logs);
+            showAlert('', 'hide');
+        } else {
+            showAlert(res.message, 'error');
+        }
+    } catch (err) {
+        showAlert('Gagal mengambil data admin.', 'error');
+    } finally {
+        setLoading(false, 'refreshBtn', 'Tampilkan');
+    }
+}
+
+function renderRekapTable(rekapData) {
+    const tbody = document.getElementById('rekapTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!rekapData || rekapData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data rekap</td></tr>';
+        return;
+    }
+
+    rekapData.forEach(item => {
+        let statusArr = [];
+        if (item.hadir > 0) statusArr.push(`<span style="color:#10b981; font-weight:600;">Hadir: ${item.hadir} Hari</span>`);
+        if (item.pulangCepat > 0) statusArr.push(`<span style="color:#f59e0b; font-weight:600;">Pulang Cepat: ${item.pulangCepat} Hari</span>`);
+        if (item.izin > 0) statusArr.push(`<span style="color:#3b82f6; font-weight:600;">Izin: ${item.izin} Hari</span>`);
+        if (item.sakit > 0) statusArr.push(`<span style="color:#8b5cf6; font-weight:600;">Sakit: ${item.sakit} Hari</span>`);
+        if (item.alfa > 0) statusArr.push(`<span style="color:#ef4444; font-weight:600;">Alfa: ${item.alfa} Hari</span>`);
+
+        const statusStr = statusArr.length > 0 ? statusArr.join(' | ') : '-';
+
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${item.nama}</strong></td>
+                <td>Rp ${formatRupiah(item.gajiPokok)}</td>
+                <td>${statusStr}</td>
+                <td style="color:#ef4444; font-weight:600;">Rp ${formatRupiah(item.totalPotongan)}</td>
+                <td style="color:#10b981; font-weight:700;">Rp ${formatRupiah(item.gajiAkhir)}</td>
+            </tr>
+        `;
+    });
+}
+
+function renderLogTable(logs) {
+    const tbody = document.getElementById('logTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!logs || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Tidak ada log absensi pada periode ini</td></tr>';
+        return;
+    }
+
+    logs.forEach(log => {
+        const fotoHtml = (log.foto && log.foto !== '-')
+            ? `<a href="${log.foto}" target="_blank" style="color: #2563eb; text-decoration: underline;">Lihat Foto</a>`
+            : '-';
+
+        const gpsHtml = (log.gps && log.gps !== '-')
+            ? `<a href="${log.gps}" target="_blank" style="color: #2563eb; text-decoration: underline;">Lihat Lokasi</a>`
+            : '-';
+
+        const pot = Number(log.potongan) || 0;
+
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${log.nama || '-'}</strong></td>
+                <td>${log.divisi || '-'}</td>
+                <td><strong>${log.tipe || 'Masuk'}</strong></td>
+                <td><span class="badge">${log.status || 'Hadir'}</span></td>
+                <td>${log.waktu || '-'}</td>
+                <td>${log.hari || '-'}</td>
+                <td style="color:${pot > 0 ? '#ef4444' : '#10b981'}; font-weight:600;">Rp ${formatRupiah(pot)}</td>
+                <td>${fotoHtml}</td>
+                <td>${gpsHtml}</td>
+                <td class="action-col" style="text-align:center;">
+                    <button class="btn btn-primary" style="padding:4px 8px; font-size:0.8rem; width:auto; margin-right:4px;" onclick="openEditLogModal(${log.rowIndex}, '${log.nama}', '${log.status}', ${pot})">
+                        ✏️ Edit
+                    </button>
+                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem; width:auto;" onclick="deleteSingleLog(${log.rowIndex})">
+                        🗑️ Hapus
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+// --- EDIT LOG FUNCTIONS ---
+function openEditLogModal(rowIndex, nama, statusSaatIni, potonganSaatIni) {
+    const editIndex = document.getElementById('editModalRowIndex');
+    const modalNama = document.getElementById('modalNamaKaryawan');
+    const modalStatus = document.getElementById('modalStatusAbsen');
+    const modalPotongan = document.getElementById('modalNominalPotongan');
+    const editModal = document.getElementById('editLogModal');
+
+    if (editIndex) editIndex.value = rowIndex;
+    if (modalNama) modalNama.innerText = nama;
+    if (modalStatus) modalStatus.value = statusSaatIni || 'Hadir';
+    if (modalPotongan) modalPotongan.value = potonganSaatIni || 0;
+    if (editModal) editModal.classList.remove('hidden');
+}
+
+function closeEditLogModal() {
+    const editModal = document.getElementById('editLogModal');
+    if (editModal) editModal.classList.add('hidden');
+}
+
+async function submitEditLog() {
+    const editIndex = document.getElementById('editModalRowIndex');
+    const modalStatus = document.getElementById('modalStatusAbsen');
+    const modalPotongan = document.getElementById('modalNominalPotongan');
+
+    const rowIndex = editIndex ? editIndex.value : '';
+    const statusVal = modalStatus ? modalStatus.value : 'Hadir';
+    const potonganVal = modalPotongan ? Number(modalPotongan.value) || 0 : 0;
+
+    setLoading(true, 'saveEditLogBtn', 'Menyimpan...');
+    try {
+        const res = await sendRequest({
+            action: 'editLogPotongan',
+            rowIndex: rowIndex,
+            status: statusVal,
+            potongan: potonganVal
+        });
+
+        if (res.status === 'success') {
+            showAlert('Data absensi berhasil diperbarui', 'success');
+            closeEditLogModal();
+            loadAdminData();
+        } else {
+            showAlert(res.message, 'error');
+        }
+    } catch (err) {
+        showAlert('Gagal memperbarui data absensi.', 'error');
+    } finally {
+        setLoading(false, 'saveEditLogBtn', 'Simpan');
+    }
+}
+
+async function deleteSingleLog(rowIndex) {
+    if (!confirm('Apakah Anda yakin ingin menghapus baris log ini?')) return;
+
+    setLoading(true, 'refreshBtn', '...');
+    try {
+        const res = await sendRequest({ action: 'deleteLog', rowIndex: rowIndex });
+        if (res.status === 'success') {
+            showAlert('Log berhasil dihapus', 'success');
+            loadAdminData();
+        } else {
+            showAlert(res.message, 'error');
+        }
+    } catch (err) {
+        showAlert('Gagal menghapus log.', 'error');
+    } finally {
+        setLoading(false, 'refreshBtn', 'Tampilkan');
+    }
+}
+
+const deleteRangeLogBtn = document.getElementById('deleteRangeLogBtn');
+if (deleteRangeLogBtn) {
+    deleteRangeLogBtn.addEventListener('click', async function () {
+        const sDate = startDateInput ? startDateInput.value : '';
+        const eDate = endDateInput ? endDateInput.value : '';
+        if (!confirm(`PERINGATAN: Log absensi dari tanggal ${sDate} s/d ${eDate} akan dihapus. Lanjutkan?`)) return;
+
+        setLoading(true, 'deleteRangeLogBtn', 'Proses...');
+        try {
+            const res = await sendRequest({
+                action: 'deleteRangeData',
+                startDate: sDate,
+                endDate: eDate
+            });
+
+            if (res.status === 'success') {
+                showAlert(res.message, 'success');
+                loadAdminData();
+            } else {
+                showAlert(res.message, 'error');
+            }
+        } catch (err) {
+            showAlert('Gagal menghapus data periode.', 'error');
+        } finally {
+            setLoading(false, 'deleteRangeLogBtn', '🗓️ Hapus Log Periode Ini');
+        }
+    });
+}
+
+const deleteAllLogBtn = document.getElementById('deleteAllLogBtn');
+if (deleteAllLogBtn) {
+    deleteAllLogBtn.addEventListener('click', async function () {
+        if (!confirm('PERINGATAN: SEMUA log absensi akan dihapus secara permanen. Lanjutkan?')) return;
+
+        setLoading(true, 'deleteAllLogBtn', 'Proses...');
+        try {
+            const res = await sendRequest({ action: 'deleteAllLogs' });
+            if (res.status === 'success') {
+                showAlert('Semua log absensi berhasil dihapus', 'success');
+                loadAdminData();
+            } else {
+                showAlert(res.message, 'error');
+            }
+        } catch (err) {
+            showAlert('Gagal menghapus semua log.', 'error');
+        } finally {
+            setLoading(false, 'deleteAllLogBtn', '🗑️ Hapus Semua Log');
+        }
+    });
+}
+
+// --- USER CRUD FUNCTIONS ---
+async function loadUsersData() {
+    try {
+        const res = await sendRequest({ action: 'getUsers' });
+        if (res.status === 'success') {
+            cachedUsersData = res.users;
+            renderUsersTable(res.users);
+        } else {
+            showAlert(res.message, 'error');
+        }
+    } catch (err) {
+        showAlert('Gagal mengambil data pengguna.', 'error');
+    }
+}
+
+function renderUsersTable(users) {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data pengguna</td></tr>';
+        return;
+    }
+
+    users.forEach(user => {
+        const userRole = user.role ? String(user.role).toLowerCase() : '';
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${user.username}</strong></td>
+                <td>${user.nama}</td>
+                <td><span class="badge" style="background:${userRole === 'admin' ? '#ef4444' : '#3b82f6'}; color:white; padding:2px 8px; border-radius:4px; font-size:0.75rem;">${user.role}</span></td>
+                <td>${user.divisi || '-'}</td>
+                <td>Rp ${formatRupiah(user.gajiPokok)}</td>
+                <td class="action-col" style="text-align:center;">
+                    <button class="btn btn-primary" style="padding:4px 8px; font-size:0.8rem; width:auto; margin-right:4px;" onclick="editUserModal(${user.rowIndex})">✏️ Edit</button>
+                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem; width:auto;" onclick="deleteUser(${user.rowIndex})">🗑️ Hapus</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function openUserModal() {
+    const title = document.getElementById('userModalTitle');
+    if (title) title.innerText = "Tambah User Baru";
+    
+    ['modalRowIndex', 'modalUsername', 'modalPassword', 'modalNama', 'modalDivisi', 'modalGajiPokok'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+    
+    const roleEl = document.getElementById('modalRole');
+    if (roleEl) roleEl.value = "User";
+
+    const userModal = document.getElementById('userModal');
+    if (userModal) userModal.classList.remove('hidden');
+}
+
+function editUserModal(rowIndex) {
+    const user = cachedUsersData.find(u => u.rowIndex === rowIndex);
+    if (!user) return;
+
+    const title = document.getElementById('userModalTitle');
+    if (title) title.innerText = "Edit User";
+
+    const fields = {
+        'modalRowIndex': user.rowIndex,
+        'modalUsername': user.username,
+        'modalPassword': user.password,
+        'modalNama': user.nama,
+        'modalRole': user.role,
+        'modalDivisi': user.divisi,
+        'modalGajiPokok': user.gajiPokok
+    };
+
+    Object.keys(fields).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = fields[id] || '';
+    });
+
+    const userModal = document.getElementById('userModal');
+    if (userModal) userModal.classList.remove('hidden');
+}
+
+function closeUserModal() {
+    const userModal = document.getElementById('userModal');
+    if (userModal) userModal.classList.add('hidden');
+}
+
+const userForm = document.getElementById('userForm');
+if (userForm) {
+    userForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const rowIndexEl = document.getElementById('modalRowIndex');
+        const rowIndex = rowIndexEl ? rowIndexEl.value : '';
+        const action = rowIndex ? 'editUser' : 'addUser';
+
+        const payload = {
+            action: action,
+            rowIndex: rowIndex,
+            username: document.getElementById('modalUsername') ? document.getElementById('modalUsername').value.trim() : '',
+            password: document.getElementById('modalPassword') ? document.getElementById('modalPassword').value.trim() : '',
+            nama: document.getElementById('modalNama') ? document.getElementById('modalNama').value.trim() : '',
+            role: document.getElementById('modalRole') ? document.getElementById('modalRole').value : 'User',
+            divisi: document.getElementById('modalDivisi') ? document.getElementById('modalDivisi').value.trim() : '',
+            gajiPokok: document.getElementById('modalGajiPokok') ? document.getElementById('modalGajiPokok').value : 0
+        };
+
+        setLoading(true, 'saveUserBtn', 'Menyimpan...');
+
+        try {
+            const res = await sendRequest(payload);
+            if (res.status === 'success') {
+                showAlert(res.message, 'success');
+                closeUserModal();
                 loadUsersData();
             } else {
                 showAlert(res.message, 'error');
             }
         } catch (err) {
-            showAlert('Gagal menghapus user.', 'error');
+            showAlert('Gagal menyimpan data user.', 'error');
+        } finally {
+            setLoading(false, 'saveUserBtn', 'Simpan');
         }
-    }
+    });
+}
 
-    // --- EXPORT HANDLERS ---
-    const exportExcelBtn = document.getElementById('exportExcelBtn');
-    if (exportExcelBtn) {
-        exportExcelBtn.addEventListener('click', function () {
-            if (typeof XLSX === 'undefined') {
-                showAlert('Library SheetJS/XLSX belum terkonfigurasi.', 'error');
-                return;
-            }
-            const isRekap = tabRekapBtn && tabRekapBtn.classList.contains('active');
-            const sheetName = isRekap ? "Rekap_Gaji" : "Log_Absensi";
-            const tableId = isRekap ? "rekapSection" : "logSection";
-            const sVal = startDateInput ? startDateInput.value : '';
-            const eVal = endDateInput ? endDateInput.value : '';
-            const dateRangeStr = `${sVal}_sd_${eVal}`;
+async function deleteUser(rowIndex) {
+    if (!confirm('Apakah Anda yakin ingin menghapus user ini?')) return;
 
-            const targetTable = document.querySelector(`#${tableId} table`);
-            if (!targetTable) {
-                showAlert('Tabel data tidak ditemukan.', 'error');
-                return;
-            }
-
-            const table = targetTable.cloneNode(true);
-            const actionCols = table.querySelectorAll('.action-col');
-            actionCols.forEach(col => col.remove());
-
-            const wb = XLSX.utils.table_to_book(table, { sheet: sheetName });
-            XLSX.writeFile(wb, `${sheetName}_${dateRangeStr}.xlsx`);
-        });
-    }
-
-    const exportPdfBtn = document.getElementById('exportPdfBtn');
-    if (exportPdfBtn) {
-        exportPdfBtn.addEventListener('click', function () {
-            if (!window.jspdf) {
-                showAlert('Library jsPDF belum terkonfigurasi.', 'error');
-                return;
-            }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'pt', 'a4');
-            const isRekap = tabRekapBtn && tabRekapBtn.classList.contains('active');
-            const title = isRekap ? "Laporan Rekapitulasi Gaji" : "Laporan Log Absensi";
-            const sVal = startDateInput ? startDateInput.value : '';
-            const eVal = endDateInput ? endDateInput.value : '';
-            const dateRangeStr = `${sVal} s/d ${eVal}`;
-
-            doc.setFontSize(14);
-            doc.text(`${title}`, 40, 40);
-            doc.setFontSize(10);
-            doc.text(`Periode: ${dateRangeStr}`, 40, 55);
-
-            doc.autoTable({
-                html: isRekap ? '#rekapSection table' : '#logSection table',
-                startY: 70,
-                styles: { fontSize: 8 },
-                columns: isRekap ? undefined : [0, 1, 2, 3, 4, 5, 6, 7, 8]
-            });
-
-            doc.save(`${title}_${sVal}_sd_${eVal}.pdf`);
-        });
-    }
-
-    // --- HELPER FUNCTIONS ---
-    function logout() {
-        stopCamera();
-        currentUser = null;
-        photoData = "-";
-        isWithinRadius = false;
-        if (appContainer) appContainer.classList.remove('wide');
-        if (adminView) adminView.classList.add('hidden');
-        if (userDashboardView) userDashboardView.classList.add('hidden');
-        if (absenFormSection) absenFormSection.classList.add('hidden');
-        if (menuAbsenSection) menuAbsenSection.classList.remove('hidden');
-        if (loginView) loginView.classList.remove('hidden');
-        
-        const lForm = document.getElementById('loginForm');
-        if (lForm) lForm.reset();
-        
-        showAlert('', 'hide');
-        const hTitle = document.getElementById('headerTitle');
-        const hSub = document.getElementById('headerSubtitle');
-        if (hTitle) hTitle.innerText = "BM CARWASH & LAUNDRY";
-        if (hSub) hSub.innerText = "Masuk ke akun Anda untuk melanjutkan";
-
-        const pwdInput = document.getElementById('password');
-        const eye = document.getElementById('eyeIcon');
-        if (pwdInput) pwdInput.setAttribute('type', 'password');
-        if (eye) {
-            eye.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+    try {
+        const res = await sendRequest({ action: 'deleteUser', rowIndex: rowIndex });
+        if (res.status === 'success') {
+            showAlert(res.message, 'success');
+            loadUsersData();
+        } else {
+            showAlert(res.message, 'error');
         }
+    } catch (err) {
+        showAlert('Gagal menghapus user.', 'error');
     }
+}
 
-    function formatRupiah(angka) {
-        return new Intl.NumberFormat('id-ID').format(angka || 0);
-    }
-
-    function setLoading(isLoading, btnId, text) {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.disabled = isLoading;
-            btn.innerText = text;
-        }
-    }
-
-    function showAlert(msg, type) {
-        if (!alertBox) return;
-        if (type === 'hide') {
-            alertBox.classList.add('hidden');
+// --- EXPORT HANDLERS ---
+const exportExcelBtn = document.getElementById('exportExcelBtn');
+if (exportExcelBtn) {
+    exportExcelBtn.addEventListener('click', function () {
+        if (typeof XLSX === 'undefined') {
+            showAlert('Library SheetJS/XLSX belum terkonfigurasi.', 'error');
             return;
         }
-        alertBox.innerText = msg;
-        alertBox.className = `alert alert-${type}`;
-        alertBox.classList.remove('hidden');
-    }
+        const isRekap = tabRekapBtn && tabRekapBtn.classList.contains('active');
+        const sheetName = isRekap ? "Rekap_Gaji" : "Log_Absensi";
+        const tableId = isRekap ? "rekapSection" : "logSection";
+        const sVal = startDateInput ? startDateInput.value : '';
+        const eVal = endDateInput ? endDateInput.value : '';
+        const dateRangeStr = `${sVal}_sd_${eVal}`;
+
+        const targetTable = document.querySelector(`#${tableId} table`);
+        if (!targetTable) {
+            showAlert('Tabel data tidak ditemukan.', 'error');
+            return;
+        }
+
+        const table = targetTable.cloneNode(true);
+        const actionCols = table.querySelectorAll('.action-col');
+        actionCols.forEach(col => col.remove());
+
+        const wb = XLSX.utils.table_to_book(table, { sheet: sheetName });
+        XLSX.writeFile(wb, `${sheetName}_${dateRangeStr}.xlsx`);
+    });
+}
+
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+if (exportPdfBtn) {
+    exportPdfBtn.addEventListener('click', function () {
+        if (!window.jspdf) {
+            showAlert('Library jsPDF belum terkonfigurasi.', 'error');
+            return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'pt', 'a4');
+        const isRekap = tabRekapBtn && tabRekapBtn.classList.contains('active');
+        const title = isRekap ? "Laporan Rekapitulasi Gaji" : "Laporan Log Absensi";
+        const sVal = startDateInput ? startDateInput.value : '';
+        const eVal = endDateInput ? endDateInput.value : '';
+        const dateRangeStr = `${sVal} s/d ${eVal}`;
+
+        doc.setFontSize(14);
+        doc.text(`${title}`, 40, 40);
+        doc.setFontSize(10);
+        doc.text(`Periode: ${dateRangeStr}`, 40, 55);
+
+        doc.autoTable({
+            html: isRekap ? '#rekapSection table' : '#logSection table',
+            startY: 70,
+            styles: { fontSize: 8 },
+            columns: isRekap ? undefined : [0, 1, 2, 3, 4, 5, 6, 7, 8]
         });
+
+        doc.save(`${title}_${sVal}_sd_${eVal}.pdf`);
+    });
+}
+
+// --- HELPER FUNCTIONS ---
+function logout() {
+    stopCamera();
+    currentUser = null;
+    photoData = "-";
+    isWithinRadius = false;
+    if (appContainer) appContainer.classList.remove('wide');
+    if (adminView) adminView.classList.add('hidden');
+    if (userDashboardView) userDashboardView.classList.add('hidden');
+    if (absenFormSection) absenFormSection.classList.add('hidden');
+    if (menuAbsenSection) menuAbsenSection.classList.remove('hidden');
+    if (loginView) loginView.classList.remove('hidden');
+    
+    const lForm = document.getElementById('loginForm');
+    if (lForm) lForm.reset();
+    
+    showAlert('', 'hide');
+    const hTitle = document.getElementById('headerTitle');
+    const hSub = document.getElementById('headerSubtitle');
+    if (hTitle) hTitle.innerText = "BM CARWASH & LAUNDRY";
+    if (hSub) hSub.innerText = "Masuk ke akun Anda untuk melanjutkan";
+
+    const pwdInput = document.getElementById('password');
+    const eye = document.getElementById('eyeIcon');
+    if (pwdInput) pwdInput.setAttribute('type', 'password');
+    if (eye) {
+        eye.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+    }
+}
+
+function formatRupiah(angka) {
+    return new Intl.NumberFormat('id-ID').format(angka || 0);
+}
+
+function setLoading(isLoading, btnId, text) {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+        btn.disabled = isLoading;
+        btn.innerText = text;
+    }
+}
+
+function showAlert(msg, type) {
+    if (!alertBox) return;
+    if (type === 'hide') {
+        alertBox.classList.add('hidden');
+        return;
+    }
+    alertBox.innerText = msg;
+    alertBox.className = `alert alert-${type}`;
+    alertBox.classList.remove('hidden');
+}
+
+// Menutup pembungkus event DOMContentLoaded utama & tag Script
+});
 </script>
 
 </body>
