@@ -203,14 +203,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Foto Selfie Absensi</label>
-                        <div class="camera-container">
-                            <video id="webcam" autoplay playsinline></video>
-                            <canvas id="canvas" class="hidden"></canvas>
-                        </div>
-                        <button type="button" class="btn btn-primary" id="takePhotoBtn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 5px;">Ambil Foto</button>
-                        <button type="button" class="btn btn-danger hidden" id="retakePhotoBtn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 5px;">Foto Ulang</button>
-                    </div>
+    <label>Foto Selfie Absensi</label>
+    <div class="camera-container">
+        <!-- Tambahkan atribut 'muted' di bawah ini -->
+        <video id="webcam" autoplay playsinline muted style="width: 100%; max-height: 250px; object-fit: cover;"></video>
+        <canvas id="canvas" class="hidden"></canvas>
+    </div>
+    <button type="button" class="btn btn-primary" id="takePhotoBtn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 5px;">Ambil Foto</button>
+    <button type="button" class="btn btn-danger hidden" id="retakePhotoBtn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 5px;">Foto Ulang</button>
+</div>
 
                     <div class="form-group">
                         <label>Status & Lokasi GPS</label>
@@ -650,48 +651,58 @@
             if (submitAbsenBtn) submitAbsenBtn.disabled = true;
         }
 
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-            .then((stream) => {
-                videoStream = stream;
-                if (video) video.srcObject = stream;
-            })
-            .catch((err) => {
-                showAlert("Gagal mengakses kamera.", "error");
-            });
-    }
+        function startCamera() {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+        .then((stream) => {
+            videoStream = stream;
+            if (video) {
+                video.srcObject = stream;
+                // Paksa pemutaran stream kamera secara langsung
+                video.play().catch((err) => {
+                    console.log("Autoplay error:", err);
+                });
+            }
+        })
+        .catch((err) => {
+            showAlert("Gagal mengakses kamera.", "error");
+        });
+}
 
-    function stopCamera() {
-        if (videoStream) {
-            videoStream.getTracks().forEach(track => track.stop());
-            videoStream = null;
+function stopCamera() {
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+}
+
+if (takePhotoBtn) {
+    takePhotoBtn.addEventListener('click', () => {
+        if (!video || !canvas) return;
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        photoData = canvas.toDataURL('image/jpeg', 0.6);
+        video.classList.add('hidden');
+        canvas.classList.remove('hidden');
+        takePhotoBtn.classList.add('hidden');
+        if (retakePhotoBtn) retakePhotoBtn.classList.remove('hidden');
+    });
+}
+
+if (retakePhotoBtn) {
+    retakePhotoBtn.addEventListener('click', () => {
+        photoData = "-";
+        if (canvas) canvas.classList.add('hidden');
+        if (video) {
+            video.classList.remove('hidden');
+            video.play(); // Pastikan video berputar kembali saat foto ulang
         }
-    }
-
-    if (takePhotoBtn) {
-        takePhotoBtn.addEventListener('click', () => {
-            if (!video || !canvas) return;
-            const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            photoData = canvas.toDataURL('image/jpeg', 0.6);
-            video.classList.add('hidden');
-            canvas.classList.remove('hidden');
-            takePhotoBtn.classList.add('hidden');
-            if (retakePhotoBtn) retakePhotoBtn.classList.remove('hidden');
-        });
-    }
-
-    if (retakePhotoBtn) {
-        retakePhotoBtn.addEventListener('click', () => {
-            photoData = "-";
-            if (canvas) canvas.classList.add('hidden');
-            if (video) video.classList.remove('hidden');
-            retakePhotoBtn.classList.add('hidden');
-            if (takePhotoBtn) takePhotoBtn.classList.remove('hidden');
-        });
-    }
+        retakePhotoBtn.classList.add('hidden');
+        if (takePhotoBtn) takePhotoBtn.classList.remove('hidden');
+    });
+}
 
     const absenForm = document.getElementById('absenForm');
     if (absenForm) {
