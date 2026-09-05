@@ -3,541 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BM CARWASH & LAUNDRY - Portal Absensi</title>
-
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <title>Sistem Absensi & Penggajian - BM CARWASH</title>
+    <!-- Library Eksternal (Excel, PDF, Autotable) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-
+    
     <style>
+        /* Desain & Layout CSS */
         :root {
             --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+            --bg-color: #f8fafc;
         }
-
-        * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-        }
-
-        body { 
-            background: var(--bg-gradient); 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            padding: 20px;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 440px;
-            transition: all 0.3s ease;
-        }
-
-        .app-container.wide { max-width: 1100px; }
-
-        .card { 
-            background: var(--card-bg); 
-            border-radius: 20px; 
-            padding: 35px 30px; 
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); 
-        }
-
-        .brand-header { text-align: center; margin-bottom: 25px; }
-
-        .brand-logo-img {
-            width: 80px; 
-            height: 80px;
-            object-fit: contain;
-            border-radius: 16px;
-            background: #f8fafc;
-            padding: 6px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            margin-bottom: 12px;
-            display: inline-block;
-        }
-
-        .brand-header h2 { font-size: 1.4rem; color: var(--text-main); font-weight: 700; }
-        .brand-header p { font-size: 0.875rem; color: var(--text-muted); margin-top: 4px; }
-
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 6px; }
-
-        .password-wrapper { position: relative; display: flex; align-items: center; }
-        .password-wrapper input { padding-right: 45px; }
-
-        .toggle-password {
-            position: absolute; right: 12px; background: none; border: none; cursor: pointer; color: var(--text-muted);
-            display: flex; align-items: center; justify-content: center; padding: 4px;
-        }
-
-        .input-control {
-            width: 100%; padding: 10px 12px;
-            border: 1px solid var(--border-color); border-radius: 10px;
-            font-size: 0.9rem; background-color: #f8fafc; color: var(--text-main);
-        }
-
-        .btn {
-            width: 100%; padding: 12px; border: none; border-radius: 10px;
-            font-size: 0.95rem; font-weight: 600; cursor: pointer;
-            display: inline-flex; align-items: center; justify-content: center;
-            gap: 8px; transition: all 0.2s ease;
-        }
-
-        .btn-primary { background-color: var(--primary-color); color: #ffffff; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-        .btn-danger { background-color: #ef4444; color: #ffffff; }
-        .btn-danger:hover { background-color: #dc2626; }
-        .btn-success { background-color: #10b981; color: #ffffff; }
-        .btn-success:hover { background-color: #059669; }
-        .btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
-
-        .absen-menu-card {
-            text-align: center;
-            padding: 20px;
-            border: 2px dashed #cbd5e1;
-            border-radius: 15px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .absen-menu-card:hover {
-            border-color: var(--primary-color);
-            background: #eff6ff;
-        }
-
-        .camera-container {
-
-            width: 100%; height: 200px; background: #000; border-radius: 10px;
-
-            overflow: hidden; position: relative; margin-bottom: 10px; display: flex;
-
-            align-items: center; justify-content: center;
-
-        }
-
-        #webcam, #canvas { width: 100%; height: 100%; object-fit: cover; }
-
-
-
-        .filter-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
-
-        .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-
-
-        .nav-tabs { display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
-
-        .tab-btn { padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; font-weight: 600; color: var(--text-muted); cursor: pointer; }
-
-        .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
-
-
-
-        .table-responsive { overflow-x: auto; margin-bottom: 20px; }
-
-        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; white-space: nowrap; }
-
-        th { background: #f1f5f9; color: #334155; padding: 12px; text-align: left; font-weight: 600; }
-
-        td { padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
-
-
-
-        .alert { margin-top: 15px; padding: 12px; border-radius: 8px; font-size: 0.85rem; text-align: center; font-weight: 500; }
-
-        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-
-        .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-
-
-
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg-color); padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 480px; transition: all 0.3s ease; }
+        .container.wide { max-width: 1100px; }
         .hidden { display: none !important; }
-
+        h2, h3 { color: #1e293b; margin-bottom: 8px; }
+        p.subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
+        
+        .form-group { margin-bottom: 16px; position: relative; }
+        label { display: block; font-size: 0.875rem; font-weight: 600; color: #334155; margin-bottom: 6px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+        
+        .btn { width: 100%; padding: 10px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 8px; }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: var(--danger-color); color: white; }
+        .btn-secondary { background: #64748b; color: white; }
+        .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #334155; }
+        
+        .alert { padding: 12px; border-radius: 6px; font-size: 0.9rem; margin-bottom: 16px; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        
+        /* Media Camera Frame */
+        .camera-box { position: relative; width: 100%; height: 260px; background: #000; border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; }
+        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Table Styles */
+        .table-container { overflow-x: auto; margin-top: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+        th { background: #f1f5f9; font-weight: 600; }
+        
+        /* Tabs */
+        .tabs { display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 16px; }
+        .tab-btn { padding: 8px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 600; color: #64748b; }
+        .tab-btn.active { border-color: var(--primary-color); color: var(--primary-color); }
+        
+        /* Modal Overlay */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 24px; border-radius: 8px; width: 100%; max-width: 400px; }
     </style>
-
-</head> 
-
+</head>
 <body>
 
-<div class="app-container" id="appContainer">
-    <div class="card">
-        <!-- BRAND HEADER -->
-        <div class="brand-header">
-            <img src="https://github.com/yusrinuliyani2025-svg/ABSENSI-BM-CARWASH-LAUNDRI/blob/main/logo.png?raw=true" alt="Logo BM Carwash & Laundry" class="brand-logo-img">
-            <h2 id="headerTitle">BM CARWASH & LAUNDRY</h2>
-            <p id="headerSubtitle">Masuk ke akun Anda untuk melanjutkan</p>
-        </div>
+<div class="container" id="appContainer">
+    <!-- Header -->
+    <h2 id="headerTitle">BM CARWASH & LAUNDRY</h2>
+    <p id="headerSubtitle" class="subtitle">Masuk ke akun Anda untuk melanjutkan</p>
 
-        <!-- FORM LOGIN -->
-        <div id="loginView">
-            <form id="loginForm">
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="username" class="input-control" placeholder="Masukkan username" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="password" class="input-control" placeholder="••••••••" required>
-                        <button type="button" class="toggle-password" id="togglePasswordBtn" title="Tampilkan/Sembunyikan Password">
-                            <svg id="eyeIcon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary" id="loginBtn">Masuk</button>
-            </form>
-        </div>
+    <!-- Alert Box -->
+    <div id="alertBox" class="alert hidden"></div>
 
-        <!-- DASHBOARD KARYAWAN -->
-        <div id="userDashboardView" class="hidden">
-            <div style="background:#f8fafc; padding:12px; border-radius:10px; margin-bottom:15px; font-size:0.875rem;">
-                <strong>Karyawan:</strong> <span id="displayName"></span><br>
-                <strong>Divisi:</strong> <span id="displayDivisi"></span>
+    <!-- 1. LOGIN VIEW -->
+    <div id="loginView">
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" required placeholder="Masukkan username">
             </div>
-
-            <!-- IKON / TOMBOL ABSEN MASUK -->
-            <div id="menuAbsenSection">
-                <div class="absen-menu-card" id="startAbsenBtn">
-                    <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#2563eb" style="margin-bottom:8px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                    </svg>
-                    <h3 style="color:#0f172a; font-size:1.1rem;">Absen Masuk</h3>
-                    <p style="color:#64748b; font-size:0.8rem;">Klik di sini untuk melakukan foto selfie & absen</p>
-                </div>
-                <button type="button" class="btn btn-danger" onclick="logout()">Keluar</button>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" required placeholder="Masukkan password">
+                <button type="button" id="togglePasswordBtn" style="position: absolute; right: 10px; top: 32px; background: none; border: none; cursor: pointer;">
+                    <svg id="eyeIcon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </button>
             </div>
-
-            <!-- FORM ABSENSI -->
-            <div id="absenFormSection" class="hidden">
-                <form id="absenForm">
-                    <div class="form-group">
-                        <label>Tipe Absen</label>
-                        <input type="text" id="tipeAbsen" class="input-control" value="Masuk" readonly style="font-weight: bold; background-color: #e2e8f0; cursor: not-allowed;">
-                    </div>
-
-                    <div class="form-group">
-    <label>Foto Selfie Absensi</label>
-    
-    <!-- Hapus atribut 'required' dari input file ini -->
-    <input type="file" id="cameraInput" accept="image/*" capture="user" style="display: none;" onchange="previewPhoto(event)">
-    
-    <!-- Area Tampilan / Preview Foto -->
-    <div class="camera-container text-center" style="margin-bottom: 10px;">
-        <div id="photoPlaceholder" style="width: 100%; height: 200px; background-color: #e9ecef; border: 2px dashed #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #6c757d;">
-            <span>Foto belum diambil</span>
-        </div>
-        
-        <img id="photoPreview" src="" alt="Preview Selfie" class="hidden" style="width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
+            <button type="submit" id="loginBtn" class="btn btn-primary">Masuk</button>
+        </form>
     </div>
 
-    <!-- Tombol Ambil Foto -->
-    <button type="button" class="btn btn-primary" id="takePhotoBtn" onclick="openNativeCamera()" style="padding: 8px; font-size: 0.85rem; margin-bottom: 5px; width: 100%;">
-        📸 Ambil Foto Selfie
-    </button>
-</div>
+    <!-- 2. USER DASHBOARD VIEW -->
+    <div id="userDashboardView" class="hidden">
+        <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+            <p><strong>Nama:</strong> <span id="displayName">-</span></p>
+            <p><strong>Divisi:</strong> <span id="displayDivisi">-</span></p>
+        </div>
 
-<div class="form-group">
-    <label>Status & Lokasi GPS</label>
-    <!-- Hapus juga 'required' di input GPS jika ada -->
-    <input type="text" id="gpsLocation" class="input-control" placeholder="Mendeteksi lokasi..." readonly>
-    <p id="radiusStatus" style="font-size:0.8rem; margin-top:5px; font-weight:600;"></p>
-</div>
+        <div id="menuAbsenSection">
+            <button id="startAbsenBtn" class="btn btn-primary">📷 Ambil Foto Absen</button>
+            <button onclick="logout()" class="btn btn-outline" style="margin-top: 8px;">Keluar</button>
+        </div>
 
-<button type="submit" class="btn btn-primary" id="submitAbsenBtn">Kirim Absensi Kehadiran</button>
-<button type="button" class="btn btn-danger" style="margin-top:10px;" id="cancelAbsenBtn">Batal</button>
-<div class="form-group">
-    <label>Status & Lokasi GPS</label>
-    <!-- Hapus juga 'required' di input GPS jika ada -->
-    <input type="text" id="gpsLocation" class="input-control" placeholder="Mendeteksi lokasi..." readonly>
-    <p id="radiusStatus" style="font-size:0.8rem; margin-top:5px; font-weight:600;"></p>
-</div>
-
-<button type="submit" class="btn btn-primary" id="submitAbsenBtn">Kirim Absensi Kehadiran</button>
-<button type="button" class="btn btn-danger" style="margin-top:10px;" id="cancelAbsenBtn">Batal</button>
-
-                    
-    <div class="form-group">
-    <label>Status & Lokasi GPS</label>
-    <input type="text" id="gpsLocation" class="input-control" placeholder="Mendeteksi lokasi..." readonly required>
-    <p id="radiusStatus" style="font-size:0.8rem; margin-top:5px; font-weight:600;"></p>
-</div>
-
-<button type="submit" class="btn btn-primary" id="submitAbsenBtn" disabled>Kirim Absensi Kehadiran</button>
-<button type="button" class="btn btn-danger" style="margin-top:10px;" id="cancelAbsenBtn">Batal</button>
-
-        <!-- VIEW ADMIN -->
-        <div id="adminView" class="hidden">
-            <div class="filter-bar">
-                <div class="filter-group">
-                    <label for="startDate">Dari:</label>
-                    <input type="date" id="startDate" class="input-control" style="width: auto;">
-                    <label for="endDate">S/d:</label>
-                    <input type="date" id="endDate" class="input-control" style="width: auto;">
-                    <button class="btn btn-primary" id="refreshBtn" style="width:auto; padding: 10px 16px;">Tampilkan</button>
+        <div id="absenFormSection" class="hidden">
+            <form id="absenForm">
+                <div class="camera-box">
+                    <video id="webcam" autoplay playsinline></video>
+                    <canvas id="canvas" class="hidden"></canvas>
                 </div>
-                <div class="filter-group">
-                    <button class="btn btn-success" id="exportExcelBtn" style="width:auto; padding: 10px 16px;">Excel</button>
-                    <button class="btn btn-danger" id="exportPdfBtn" style="width:auto; padding: 10px 16px;">PDF</button>
+
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <button type="button" id="takePhotoBtn" class="btn btn-primary">📸 Ambil Foto</button>
+                    <button type="button" id="retakePhotoBtn" class="btn btn-secondary hidden">🔄 Foto Ulang</button>
                 </div>
-            </div>
 
-            <!-- TABS NAVIGASI ADMIN -->
-            <div class="nav-tabs">
-                <button class="tab-btn active" id="tabRekapBtn">Rekap Gaji</button>
-                <button class="tab-btn" id="tabLogBtn">Log Absensi</button>
-                <button class="tab-btn" id="tabUsersBtn">Manajemen Users</button>
-            </div>
+                <p id="radiusStatus" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 12px;"></p>
+                <input type="hidden" id="gpsLocation">
 
-            <!-- 1. TAB REKAP GAJI -->
-            <div id="rekapSection" class="table-responsive">
+                <button type="submit" id="submitAbsenBtn" class="btn btn-primary" disabled>Kirim Absensi Kehadiran</button>
+                <button type="button" id="cancelAbsenBtn" class="btn btn-outline">Batal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. ADMIN DASHBOARD VIEW -->
+    <div id="adminView" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="date" id="startDate" style="width: auto;">
+                <span>s/d</span>
+                <input type="date" id="endDate" style="width: auto;">
+                <button id="refreshBtn" class="btn btn-primary" style="width: auto; margin-top: 0;">Tampilkan</button>
+            </div>
+            <div>
+                <button id="exportExcelBtn" class="btn btn-secondary" style="width: auto; margin-top: 0;">📊 Excel</button>
+                <button id="exportPdfBtn" class="btn btn-secondary" style="width: auto; margin-top: 0;">📄 PDF</button>
+                <button onclick="logout()" class="btn btn-outline" style="width: auto; margin-top: 0;">Keluar</button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button id="tabRekapBtn" class="tab-btn active">Rekap Gaji</button>
+            <button id="tabLogBtn" class="tab-btn">Log Absensi</button>
+            <button id="tabUsersBtn" class="tab-btn">Kelola Karyawan</button>
+        </div>
+
+        <!-- Tab 1: Rekap Section -->
+        <div id="rekapSection">
+            <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>Nama</th>
                             <th>Gaji Pokok</th>
-                            <th>Status</th>
-                            <th>Potongan</th>
+                            <th>Rincian Kehadiran</th>
+                            <th>Total Potongan</th>
                             <th>Gaji Akhir</th>
                         </tr>
                     </thead>
                     <tbody id="rekapTableBody"></tbody>
                 </table>
             </div>
+        </div>
 
-            <!-- 2. TAB LOG ABSENSI -->
-            <div id="logSection" class="table-responsive hidden">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                    <button class="btn btn-danger" id="deleteRangeLogBtn" style="width: auto; padding: 8px 16px; font-size: 0.85rem;">
-                        🗓️ Hapus Log Periode Ini
-                    </button>
-                    <button class="btn btn-danger" id="deleteAllLogBtn" style="width: auto; padding: 8px 16px; font-size: 0.85rem;">
-                        🗑️ Hapus Semua Log
-                    </button>
-                </div>
-
+        <!-- Tab 2: Log Section -->
+        <div id="logSection" class="hidden">
+            <div style="margin-bottom: 8px; display: flex; gap: 8px;">
+                <button id="deleteRangeLogBtn" class="btn btn-danger" style="width: auto;">🗓️ Hapus Log Periode Ini</button>
+                <button id="deleteAllLogBtn" class="btn btn-danger" style="width: auto;">🗑️ Hapus Semua Log</button>
+            </div>
+            <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>Nama</th>
                             <th>Divisi</th>
-                            <th>Tipe Absen</th>
+                            <th>Tipe</th>
                             <th>Status</th>
                             <th>Waktu</th>
                             <th>Hari</th>
                             <th>Potongan</th>
-                            <th>Selfie</th>
+                            <th>Foto</th>
                             <th>GPS</th>
-                            <th class="action-col" style="text-align: center;">Aksi</th>
+                            <th class="action-col">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="logTableBody"></tbody>
                 </table>
             </div>
+        </div>
 
-            <!-- 3. TAB MANAJEMEN USERS -->
-            <div id="usersSection" class="table-responsive hidden">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <h3 style="margin: 0; font-size: 1.1rem;">Daftar Pengguna / Karyawan</h3>
-                    <button class="btn btn-primary" onclick="openUserModal()" style="width: auto; padding: 8px 16px; font-size: 0.85rem;">
-                        ➕ Tambah User
-                    </button>
-                </div>
-
+        <!-- Tab 3: Users Section -->
+        <div id="usersSection" class="hidden">
+            <button onclick="openUserModal()" class="btn btn-primary" style="width: auto; margin-bottom: 12px;">➕ Tambah Karyawan Baru</button>
+            <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>Username</th>
-                            <th>Nama Karyawan</th>
+                            <th>Nama</th>
                             <th>Role</th>
                             <th>Divisi</th>
                             <th>Gaji Pokok</th>
-                            <th class="action-col" style="text-align: center;">Aksi</th>
+                            <th class="action-col">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="usersTableBody"></tbody>
                 </table>
             </div>
-
-            <button class="btn btn-danger" onclick="logout()" style="margin-top:15px;">Logout</button>
         </div>
-
-        <div id="alertBox" class="alert hidden"></div>
     </div>
 </div>
 
-<!-- MODAL EDIT LOG ABSENSI -->
-
-<div id="editLogModal" class="modal hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:9999;">
-
-    <div style="background:#fff; padding:24px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-
-        <h3 style="margin-top:0; font-size:1.15rem; color:#1e293b; margin-bottom:16px;">Edit Log: <span id="modalNamaKaryawan" style="color:#2563eb;"></span></h3>
-
-        
-
+<!-- MODAL: Edit Log Absensi -->
+<div id="editLogModal" class="modal hidden">
+    <div class="modal-content">
+        <h3>Edit Data Absensi</h3>
+        <p style="margin-bottom: 12px;">Karyawan: <strong id="modalNamaKaryawan"></strong></p>
         <input type="hidden" id="editModalRowIndex">
-
-        
-
-        <div style="margin-bottom:14px; text-align:left;">
-
-            <label style="display:block; font-size:0.85rem; font-weight:600; color:#475569; margin-bottom:6px;">Status Absensi</label>
-
-            <select id="modalStatusAbsen" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.9rem; outline:none;">
-
+        <div class="form-group">
+            <label>Status Absen</label>
+            <select id="modalStatusAbsen">
                 <option value="Hadir">Hadir</option>
-
-                <option value="Hadir/Pulang Cepat">Hadir/Pulang Cepat</option>
-
                 <option value="Izin">Izin</option>
-
                 <option value="Sakit">Sakit</option>
-
-                <option value="Alpa">Alpa</option>
-
+                <option value="Pulang Cepat">Pulang Cepat</option>
+                <option value="Alfa">Alfa</option>
             </select>
-
         </div>
-
-
-
-        <div style="margin-bottom:20px; text-align:left;">
-
-            <label style="display:block; font-size:0.85rem; font-weight:600; color:#475569; margin-bottom:6px;">Nominal Potongan (Rp)</label>
-
-            <input type="number" id="modalNominalPotongan" placeholder="0" min="0" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.9rem; outline:none; box-sizing:border-box;">
-
+        <div class="form-group">
+            <label>Nominal Potongan (Rp)</label>
+            <input type="number" id="modalNominalPotongan" min="0">
         </div>
-
-
-
-        <div style="display:flex; justify-content:flex-end; gap:10px;">
-
-            <button type="button" onclick="closeEditLogModal()" style="background:#94a3b8; color:#fff; padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-weight:500;">Batal</button>
-
-            <button type="button" id="saveEditLogBtn" onclick="submitEditLog()" style="background:#2563eb; color:#fff; padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-weight:500;">Simpan</button>
-
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+            <button id="saveEditLogBtn" onclick="submitEditLog()" class="btn btn-primary">Simpan</button>
+            <button onclick="closeEditLogModal()" class="btn btn-outline">Batal</button>
         </div>
-
     </div>
-
 </div>
 
-
-
-<!-- MODAL POPUP FORM USER (CREATE / EDIT) -->
-
-<div id="userModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-
-    <div style="background: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-
-        <h3 id="userModalTitle" style="margin-top: 0; margin-bottom: 16px;">Tambah User Baru</h3>
-
+<!-- MODAL: Tambah / Edit User -->
+<div id="userModal" class="modal hidden">
+    <div class="modal-content">
+        <h3 id="userModalTitle">Tambah User</h3>
         <form id="userForm">
-
             <input type="hidden" id="modalRowIndex">
-
-            
-
-            <div style="margin-bottom: 12px;">
-
-                <label style="display:block; margin-bottom: 4px; font-size: 0.85rem;">Username</label>
-
-                <input type="text" id="modalUsername" class="input-control" required style="width: 100%;">
-
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="modalUsername" required>
             </div>
-
-
-
-            <div style="margin-bottom: 12px;">
-
-                <label style="display:block; margin-bottom: 4px; font-size: 0.85rem;">Password</label>
-
-                <input type="text" id="modalPassword" class="input-control" required style="width: 100%;">
-
+            <div class="form-group">
+                <label>Password</label>
+                <input type="text" id="modalPassword" required>
             </div>
-
-
-
-            <div style="margin-bottom: 12px;">
-
-                <label style="display:block; margin-bottom: 4px; font-size: 0.85rem;">Nama Lengkap</label>
-
-                <input type="text" id="modalNama" class="input-control" required style="width: 100%;">
-
+            <div class="form-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="modalNama" required>
             </div>
-
-
-
-            <div style="margin-bottom: 12px;">
-
-                <label style="display:block; margin-bottom: 4px; font-size: 0.85rem;">Role</label>
-
-                <select id="modalRole" class="input-control" style="width: 100%;">
-
+            <div class="form-group">
+                <label>Role</label>
+                <select id="modalRole">
                     <option value="User">User</option>
-
                     <option value="Admin">Admin</option>
-
                 </select>
-
             </div>
-
-
-
-            <div style="margin-bottom: 12px;">
-
-                <label style="display:block; margin-bottom: 4px; font-size: 0.85rem;">Divisi</label>
-
-                <input type="text" id="modalDivisi" class="input-control" placeholder="Contoh: Cuci Mobil" style="width: 100%;">
-
+            <div class="form-group">
+                <label>Divisi</label>
+                <input type="text" id="modalDivisi">
             </div>
-
-
-
-            <div style="margin-bottom: 16px;">
-
-                <label style="display:block; margin-bottom: 4px; font-size: 0.85rem;">Gaji Pokok (Rp)</label>
-
-                <input type="number" id="modalGajiPokok" class="input-control" placeholder="0" style="width: 100%;">
-
+            <div class="form-group">
+                <label>Gaji Pokok (Rp)</label>
+                <input type="number" id="modalGajiPokok" min="0">
             </div>
-
-
-
-            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-
-                <button type="button" class="btn" onclick="closeUserModal()" style="background: #e2e8f0; color: #334155; width: auto; padding: 8px 16px;">Batal</button>
-
-                <button type="submit" id="saveUserBtn" class="btn btn-primary" style="width: auto; padding: 8px 16px;">Simpan</button>
-
+            <div style="display: flex; gap: 8px; margin-top: 16px;">
+                <button type="submit" id="saveUserBtn" class="btn btn-primary">Simpan</button>
+                <button type="button" onclick="closeUserModal()" class="btn btn-outline">Batal</button>
             </div>
-
         </form>
-
     </div>
+</div>
 
-</div> 
-
-
-    
-    <script>
-
+<script>
 // ==========================================
-// 1. FUNGSI UTAMA (TARUH DI PALING ATAS)
+// 1. FUNGSI UTAMA & UTILITY
 // ==========================================
 function setLoading(isLoading, btnId, text) {
     const btn = document.getElementById(btnId);
@@ -558,182 +302,190 @@ function showAlert(msg, type) {
     alertBox.className = `alert alert-${type}`;
     alertBox.classList.remove('hidden');
 }
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUNwU45rgFZrC_eUNSucRaLPcWXJUBSRvdjBX1h9wRG9E__M7ay-QqwvvmhnyPyrc/exec";
 
-    // --- PENGATURAN KOORDINAT OUTLET & RADIUS ABSENSI ---
-    const OFFICE_LAT = 0.507790;   // Latitude Lokasi Usaha
-    const OFFICE_LNG = 122.301510;  // Longitude Lokasi Usaha
-    const MAX_RADIUS_METERS = 100;  // Batas radius maksimal dalam meter
+function formatRupiah(angka) {
+    return new Intl.NumberFormat('id-ID').format(angka || 0);
+}
 
-    // --- DEKLARASI VARIABEL UTAMA ---
-    let currentUser = null;
-    let photoData = "-";
-    let videoStream = null;
-    let isWithinRadius = false;
-    let cachedUsersData = [];
-    let hasAbsenToday = false; // Flag status absen hari ini
+// ==========================================
+// 2. KONFIGURASI & DEKLARASI VARIABEL UTAMA
+// ==========================================
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUNwU45rgFZrC_eUNSucRaLPcWXJUBSRvdjBX1h9wRG9E__M7ay-QqwvvmhnyPyrc/exec";
 
-    // --- INISIALISASI ELEMEN DOM ---
-    const appContainer = document.getElementById('appContainer');
-    const loginView = document.getElementById('loginView');
-    const userDashboardView = document.getElementById('userDashboardView');
-    const menuAbsenSection = document.getElementById('menuAbsenSection');
-    const absenFormSection = document.getElementById('absenFormSection');
-    const adminView = document.getElementById('adminView');
-    const alertBox = document.getElementById('alertBox');
-    const startDateInput = document.getElementById('startDate');
-    const endDateInput = document.getElementById('endDate');
+// --- Pengaturan Koordinat Outlet & Radius Absensi ---
+const OFFICE_LAT = 0.507790;    // Latitude Lokasi Usaha
+const OFFICE_LNG = 122.301510;  // Longitude Lokasi Usaha
+const MAX_RADIUS_METERS = 100;  // Batas radius maksimal dalam meter
 
-    const video = document.getElementById('webcam') || document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const takePhotoBtn = document.getElementById('takePhotoBtn');
-    const retakePhotoBtn = document.getElementById('retakePhotoBtn');
-    const gpsInput = document.getElementById('gpsLocation') || document.getElementById('gpsInput');
-    const radiusStatus = document.getElementById('radiusStatus');
-    const submitAbsenBtn = document.getElementById('submitAbsenBtn');
+// --- Deklarasi Variabel State ---
+let currentUser = null;
+let photoData = "-";
+let videoStream = null;
+let isWithinRadius = false;
+let cachedUsersData = [];
+let hasAbsenToday = false; // Flag status absen hari ini
 
-    // Tanggal Default (30 hari terakhir hingga hari ini)
-    const today = new Date();
-    const defaultStart = new Date();
-    defaultStart.setDate(today.getDate() - 30);
+// --- Inisialisasi Elemen DOM ---
+const appContainer = document.getElementById('appContainer');
+const loginView = document.getElementById('loginView');
+const userDashboardView = document.getElementById('userDashboardView');
+const menuAbsenSection = document.getElementById('menuAbsenSection');
+const absenFormSection = document.getElementById('absenFormSection');
+const adminView = document.getElementById('adminView');
+const startDateInput = document.getElementById('startDate');
+const endDateInput = document.getElementById('endDate');
 
-    const formatDateForInput = (d) => {
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
+const video = document.getElementById('webcam') || document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const takePhotoBtn = document.getElementById('takePhotoBtn');
+const retakePhotoBtn = document.getElementById('retakePhotoBtn');
+const gpsInput = document.getElementById('gpsLocation') || document.getElementById('gpsInput');
+const radiusStatus = document.getElementById('radiusStatus');
+const submitAbsenBtn = document.getElementById('submitAbsenBtn');
 
-    if (startDateInput) startDateInput.value = formatDateForInput(defaultStart);
-    if (endDateInput) endDateInput.value = formatDateForInput(today);
+// Tanggal Default (30 hari terakhir hingga hari ini)
+const today = new Date();
+const defaultStart = new Date();
+defaultStart.setDate(today.getDate() - 30);
 
-    // Toggle Password Visibility
-    const passwordInput = document.getElementById('password');
-    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
-    const eyeIcon = document.getElementById('eyeIcon');
+const formatDateForInput = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
-    if (togglePasswordBtn && passwordInput && eyeIcon) {
-        togglePasswordBtn.addEventListener('click', function () {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            if (type === 'text') {
-                eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.025 10.025 0 012.122-.363c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411M3 3l18 18" />`;
-            } else {
-                eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
-            }
-        });
-    }
+if (startDateInput) startDateInput.value = formatDateForInput(defaultStart);
+if (endDateInput) endDateInput.value = formatDateForInput(today);
 
-    // --- FUNGSI LOCK KAMERA & ABSENSI ---
-    function lockAbsenFeature(status) {
-        hasAbsenToday = status;
-        const startAbsenBtn = document.getElementById('startAbsenBtn');
+// Toggle Password Visibility
+const passwordInput = document.getElementById('password');
+const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+const eyeIcon = document.getElementById('eyeIcon');
 
-        if (hasAbsenToday) {
-            stopCamera(); // Menghentikan kamera jika aktif
-
-            if (startAbsenBtn) {
-                startAbsenBtn.disabled = true;
-                startAbsenBtn.style.opacity = '0.6';
-                startAbsenBtn.style.cursor = 'not-allowed';
-                startAbsenBtn.innerText = '🔒 Sudah Absen Hari Ini';
-            }
+if (togglePasswordBtn && passwordInput && eyeIcon) {
+    togglePasswordBtn.addEventListener('click', function () {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        if (type === 'text') {
+            eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.025 10.025 0 012.122-.363c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411M3 3l18 18" />`;
         } else {
-            if (startAbsenBtn) {
-                startAbsenBtn.disabled = false;
-                startAbsenBtn.style.opacity = '1';
-                startAbsenBtn.style.cursor = 'pointer';
-                startAbsenBtn.innerText = '📷 Ambil Foto Absen';
-            }
+            eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+        }
+    });
+}
+
+// ==========================================
+// 3. FUNGSI LOGIKA ABSENSI & GEOLOKASI
+// ==========================================
+function lockAbsenFeature(status) {
+    hasAbsenToday = status;
+    const startAbsenBtn = document.getElementById('startAbsenBtn');
+
+    if (hasAbsenToday) {
+        stopCamera(); // Menghentikan kamera jika aktif
+
+        if (startAbsenBtn) {
+            startAbsenBtn.disabled = true;
+            startAbsenBtn.style.opacity = '0.6';
+            startAbsenBtn.style.cursor = 'not-allowed';
+            startAbsenBtn.innerText = '🔒 Sudah Absen Hari Ini';
+        }
+    } else {
+        if (startAbsenBtn) {
+            startAbsenBtn.disabled = false;
+            startAbsenBtn.style.opacity = '1';
+            startAbsenBtn.style.cursor = 'pointer';
+            startAbsenBtn.innerText = '📷 Ambil Foto Absen';
         }
     }
+}
 
-    // Hitung Jarak Haversine (Dalam meter)
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3;
-        const rad1 = lat1 * Math.PI / 180;
-        const rad2 = lat2 * Math.PI / 180;
-        const dRad = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
+// Hitung Jarak Haversine (Dalam meter)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3;
+    const rad1 = lat1 * Math.PI / 180;
+    const rad2 = lat2 * Math.PI / 180;
+    const dRad = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
 
-        const a = Math.sin(dRad / 2) * Math.sin(dRad / 2) +
-            Math.cos(rad1) * Math.cos(rad2) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const a = Math.sin(dRad / 2) * Math.sin(dRad / 2) +
+        Math.cos(rad1) * Math.cos(rad2) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        return Math.round(R * c);
-    }
+    return Math.round(R * c);
+}
 
-    // HTTP POST Request Handler
-    async function sendRequest(payload) {
-        try {
-            if (typeof SCRIPT_URL === 'undefined') {
-                throw new Error('SCRIPT_URL belum didefinisikan.');
-            }
-            const response = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            });
-            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-            return await response.json();
-        } catch (error) {
-            console.error('API Error:', error);
-            return { status: 'error', message: error.message || 'Koneksi ke Apps Script gagal.' };
+// HTTP POST Request Handler
+async function sendRequest(payload) {
+    try {
+        if (typeof SCRIPT_URL === 'undefined') {
+            throw new Error('SCRIPT_URL belum didefinisikan.');
         }
-    }
-
-    // Login Submit
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
-            setLoading(true, 'loginBtn', 'Proses Login...');
-
-            try {
-                const res = await sendRequest({
-                    action: 'login',
-                    username: document.getElementById('username').value.trim(),
-                    password: document.getElementById('password').value.trim()
-                });
-
-                if (res.status === 'success') {
-                    currentUser = res.user;
-                    if (loginView) loginView.classList.add('hidden');
-                    showAlert('', 'hide');
-
-                    if (String(currentUser.role).toLowerCase() === 'admin') {
-                        if (appContainer) appContainer.classList.add('wide');
-                        document.getElementById('headerTitle').innerText = "Dashboard Admin";
-                        document.getElementById('headerSubtitle').innerText = "Rekapitulasi Penggajian & Absensi";
-                        if (adminView) adminView.classList.remove('hidden');
-                        loadAdminData();
-                    } else {
-                        document.getElementById('headerTitle').innerText = "BM CARWASH";
-                        document.getElementById('headerSubtitle').innerText = "Portal Absensi Karyawan";
-                        document.getElementById('displayName').innerText = currentUser.nama || '-';
-                        document.getElementById('displayDivisi').innerText = currentUser.divisi || '-';
-                        if (userDashboardView) userDashboardView.classList.remove('hidden');
-
-                        // Periksa status apakah sudah absen hari ini dari response backend
-                        lockAbsenFeature(res.hasAbsenToday || false);
-                    }
-                } else {
-                    showAlert(res.message, 'error');
-                }
-            } catch (err) {
-                showAlert('Gagal terhubung ke server.', 'error');
-            } finally {
-                setLoading(false, 'loginBtn', 'Masuk');
-            }
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
         });
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        return { status: 'error', message: error.message || 'Koneksi ke Apps Script gagal.' };
     }
+}
 
-   // Absen Handlers
+// Login Submit Handler
+const loginForm = document.getElementById('loginForm');
+if (loginForm) {
+    loginForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        setLoading(true, 'loginBtn', 'Proses Login...');
+
+        try {
+            const res = await sendRequest({
+                action: 'login',
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value.trim()
+            });
+
+            if (res.status === 'success') {
+                currentUser = res.user;
+                if (loginView) loginView.classList.add('hidden');
+                showAlert('', 'hide');
+
+                if (String(currentUser.role).toLowerCase() === 'admin') {
+                    if (appContainer) appContainer.classList.add('wide');
+                    document.getElementById('headerTitle').innerText = "Dashboard Admin";
+                    document.getElementById('headerSubtitle').innerText = "Rekapitulasi Penggajian & Absensi";
+                    if (adminView) adminView.classList.remove('hidden');
+                    loadAdminData();
+                } else {
+                    document.getElementById('headerTitle').innerText = "BM CARWASH";
+                    document.getElementById('headerSubtitle').innerText = "Portal Absensi Karyawan";
+                    document.getElementById('displayName').innerText = currentUser.nama || '-';
+                    document.getElementById('displayDivisi').innerText = currentUser.divisi || '-';
+                    if (userDashboardView) userDashboardView.classList.remove('hidden');
+
+                    // Periksa status apakah sudah absen hari ini dari response backend
+                    lockAbsenFeature(res.hasAbsenToday || false);
+                }
+            } else {
+                showAlert(res.message, 'error');
+            }
+        } catch (err) {
+            showAlert('Gagal terhubung ke server.', 'error');
+        } finally {
+            setLoading(false, 'loginBtn', 'Masuk');
+        }
+    });
+}
+
+// Absen Handlers
 const startAbsenBtn = document.getElementById('startAbsenBtn');
 if (startAbsenBtn) {
     startAbsenBtn.addEventListener('click', () => {
-        // Cek pencegahan jika user sudah absen
         if (hasAbsenToday) {
             showAlert('Anda sudah melakukan absensi untuk hari ini.', 'error');
             return;
@@ -809,13 +561,15 @@ function initCameraAndGPS() {
     }
 }
 
-// --- BUKA KAMERA OTOMATIS (MENGGUNAKAN ID 'webcam') ---
+// ==========================================
+// 4. KONTROL KAMERA & TANGKAT FOTO
+// ==========================================
 function startCamera() {
-    const video = document.getElementById('webcam'); // Disesuaikan dengan HTML
-    const canvas = document.getElementById('canvas');
+    const videoElem = document.getElementById('webcam');
+    const canvasElem = document.getElementById('canvas');
     
-    if (canvas) canvas.classList.add('hidden');
-    if (video) video.classList.remove('hidden');
+    if (canvasElem) canvasElem.classList.add('hidden');
+    if (videoElem) videoElem.classList.remove('hidden');
 
     navigator.mediaDevices.getUserMedia({ 
         video: { 
@@ -826,10 +580,10 @@ function startCamera() {
     })
     .then((stream) => {
         videoStream = stream;
-        if (video) {
-            video.srcObject = stream;
-            video.onloadedmetadata = () => {
-                video.play().catch(e => console.log("Play error:", e));
+        if (videoElem) {
+            videoElem.srcObject = stream;
+            videoElem.onloadedmetadata = () => {
+                videoElem.play().catch(e => console.log("Play error:", e));
             };
         }
     })
@@ -845,55 +599,88 @@ function stopCamera() {
     }
 }
 
-// --- TOMBOL AMBIL FOTO (MENGGUNAKAN ID 'webcam') ---
 if (takePhotoBtn) {
     takePhotoBtn.addEventListener('click', () => {
-        const video = document.getElementById('webcam'); // Disesuaikan dengan HTML
-        const canvas = document.getElementById('canvas');
-        if (!video || !canvas) return;
+        const videoElem = document.getElementById('webcam');
+        const canvasElem = document.getElementById('canvas');
+        if (!videoElem || !canvasElem) return;
 
-        if (video.readyState !== 4 || video.videoWidth === 0) {
+        if (videoElem.readyState !== 4 || videoElem.videoWidth === 0) {
             showAlert("Kamera sedang memuat, silakan tunggu sebentar...", "error");
             return;
         }
 
-        const context = canvas.getContext('2d');
-        const w = video.videoWidth;
-        const h = video.videoHeight;
+        const context = canvasElem.getContext('2d');
+        const w = videoElem.videoWidth;
+        const h = videoElem.videoHeight;
         
-        canvas.width = w;
-        canvas.height = h;
+        canvasElem.width = w;
+        canvasElem.height = h;
         
-        context.drawImage(video, 0, 0, w, h);
-        photoData = canvas.toDataURL('image/jpeg', 0.6);
+        context.drawImage(videoElem, 0, 0, w, h);
+        photoData = canvasElem.toDataURL('image/jpeg', 0.6);
         
-        video.classList.add('hidden');
-        canvas.classList.remove('hidden');
+        videoElem.classList.add('hidden');
+        canvasElem.classList.remove('hidden');
         
         takePhotoBtn.classList.add('hidden');
         if (retakePhotoBtn) retakePhotoBtn.classList.remove('hidden');
     });
 }
 
-// --- TOMBOL FOTO ULANG (MENGGUNAKAN ID 'webcam') ---
 if (retakePhotoBtn) {
     retakePhotoBtn.addEventListener('click', () => {
-        const video = document.getElementById('webcam'); // Disesuaikan dengan HTML
-        const canvas = document.getElementById('canvas');
+        const videoElem = document.getElementById('webcam');
+        const canvasElem = document.getElementById('canvas');
         
         photoData = "-";
-        if (canvas) canvas.classList.add('hidden');
-        if (video) {
-            video.classList.remove('hidden');
-            video.play().catch(e => console.log(e));
+        if (canvasElem) canvasElem.classList.add('hidden');
+        if (videoElem) {
+            videoElem.classList.remove('hidden');
+            videoElem.play().catch(e => console.log(e));
         }
         retakePhotoBtn.classList.add('hidden');
         if (takePhotoBtn) takePhotoBtn.classList.remove('hidden');
     });
 }
 
+// Fallback untuk kamera HP bawaan
+function openNativeCamera() {
+    const cameraInput = document.getElementById('cameraInput');
+    if (cameraInput) {
+        cameraInput.click();
+    }
+}
+
+function previewPhoto(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            photoData = e.target.result;
+            
+            const previewImg = document.getElementById('photoPreview');
+            const placeholder = document.getElementById('photoPlaceholder');
+            const takeBtn = document.getElementById('takePhotoBtn');
+
+            if (previewImg && placeholder) {
+                previewImg.src = photoData;
+                previewImg.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            }
+
+            if (takeBtn) {
+                takeBtn.innerText = "🔄 Foto Ulang";
+                takeBtn.classList.remove('btn-primary');
+                takeBtn.classList.add('btn-secondary');
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
 // ==========================================
-// FORM ABSENSI & KONTROL UTAMA
+// 5. FORM SUBMIT ABSENSI
 // ==========================================
 const absenForm = document.getElementById('absenForm');
 if (absenForm) {
@@ -951,7 +738,7 @@ if (absenForm) {
 }
 
 // ==========================================
-// TAB MANAGEMENT (PANEL ADMIN)
+// 6. PANEL ADMIN (TAB & LOG DATA)
 // ==========================================
 const tabRekapBtn = document.getElementById('tabRekapBtn');
 const tabLogBtn = document.getElementById('tabLogBtn');
@@ -1007,9 +794,6 @@ async function loadAdminData() {
     }
 }
 
-// ==========================================
-// RENDER TABEL & MODAL LOGS
-// ==========================================
 function renderRekapTable(rekapData) {
     const tbody = document.getElementById('rekapTableBody');
     if (!tbody) return;
@@ -1209,7 +993,7 @@ if (deleteAllLogBtn) {
 }
 
 // ==========================================
-// USER MANAGEMENT (CRUD USER)
+// 7. USER MANAGEMENT (CRUD USER)
 // ==========================================
 async function loadUsersData() {
     try {
@@ -1355,7 +1139,7 @@ async function deleteUser(rowIndex) {
 }
 
 // ==========================================
-// EXPORT DATA (EXCEL & PDF)
+// 8. EXPORT DATA (EXCEL & PDF)
 // ==========================================
 const exportExcelBtn = document.getElementById('exportExcelBtn');
 if (exportExcelBtn) {
@@ -1418,7 +1202,7 @@ if (exportPdfBtn) {
 }
 
 // ==========================================
-// HELPER & KAMERA
+// 9. LOGOUT
 // ==========================================
 function logout() {
     stopCamera();
@@ -1448,64 +1232,6 @@ function logout() {
         eye.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
     }
 }
-
-function formatRupiah(angka) {
-    return new Intl.NumberFormat('id-ID').format(angka || 0);
-}
-
-function setLoading(isLoading, btnId, text) {
-    const btn = document.getElementById(btnId);
-    if (btn) {
-        btn.disabled = isLoading;
-        btn.innerText = text;
-    }
-}
-
-function showAlert(msg, type) {
-    if (!alertBox) return;
-    if (type === 'hide') {
-        alertBox.classList.add('hidden');
-        return;
-    }
-    alertBox.innerText = msg;
-    alertBox.className = `alert alert-${type}`;
-    alertBox.classList.remove('hidden');
-}
-
-function openNativeCamera() {
-    const cameraInput = document.getElementById('cameraInput');
-    if (cameraInput) {
-        cameraInput.click();
-    }
-}
-
-function previewPhoto(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            photoData = e.target.result;
-            
-            const previewImg = document.getElementById('photoPreview');
-            const placeholder = document.getElementById('photoPlaceholder');
-            const takeBtn = document.getElementById('takePhotoBtn');
-
-            if (previewImg && placeholder) {
-                previewImg.src = photoData;
-                previewImg.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-            }
-
-            if (takeBtn) {
-                takeBtn.innerText = "🔄 Foto Ulang";
-                takeBtn.classList.remove('btn-primary');
-                takeBtn.classList.add('btn-secondary');
-            }
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
 </script>
 
 </body>
