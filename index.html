@@ -1317,17 +1317,16 @@ function setLoading(isLoading, btnId, text) {
 }
 
 function showAlert(msg, type) {
-        if (!alertBox) return;
-        if (type === 'hide') {
-            alertBox.classList.add('hidden');
-            return;
-        }
-        alertBox.innerText = msg;
-        alertBox.className = `alert alert-${type}`;
-        alertBox.classList.remove('hidden');
+    if (!alertBox) return;
+    if (type === 'hide') {
+        alertBox.classList.add('hidden');
+        return;
     }
+    alertBox.innerText = msg;
+    alertBox.className = `alert alert-${type}`;
+    alertBox.classList.remove('hidden');
+} // <--- Cukup 1 kurung kurawal tutup saja di sini
 
-} // <--- KURUNG KURAWAL INI WAJIB ADA UNTUK MENUTUP DENTITAS UTAMA
 </script>
 
 </body>
