@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Absensi & Penggajian - BM CARWASH</title>
-    <!-- Library Eksternal (Excel, PDF, Autotable) -->
+    <title>Absensi Karyawan BM Carwash</title>
+    <!-- Library Eksternal -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        /* Desain & Layout CSS */
         :root {
             --primary-color: #2563eb;
             --danger-color: #ef4444;
@@ -18,56 +17,51 @@
             --bg-color: #f8fafc;
         }
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-        body { background-color: var(--bg-color); padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 480px; transition: all 0.3s ease; }
+        body { background-color: var(--bg-color); padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 480px; transition: all 0.3s ease; }
         .container.wide { max-width: 1100px; }
         .hidden { display: none !important; }
-        h2, h3 { color: #1e293b; margin-bottom: 8px; }
-        p.subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
+        h2, h3 { color: #1e293b; margin-bottom: 8px; text-align: center; }
+        p.subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; text-align: center; }
         
         .form-group { margin-bottom: 16px; position: relative; }
         label { display: block; font-size: 0.875rem; font-weight: 600; color: #334155; margin-bottom: 6px; }
         input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
         
-        .btn { width: 100%; padding: 10px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 8px; }
+        .btn { width: 100%; padding: 12px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 8px; font-size: 0.95rem; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-primary { background: var(--primary-color); color: white; }
         .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
         .btn-danger { background: var(--danger-color); color: white; }
         .btn-secondary { background: #64748b; color: white; }
         .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #334155; }
         
-        .alert { padding: 12px; border-radius: 6px; font-size: 0.9rem; margin-bottom: 16px; }
+        .alert { padding: 12px; border-radius: 6px; font-size: 0.9rem; margin-bottom: 16px; text-align: center; }
         .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
         .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
         
-        /* Media Camera Frame */
-        .camera-box { position: relative; width: 100%; height: 260px; background: #000; border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; }
-        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+        /* Area Preview Foto */
+        .preview-box { width: 100%; height: 260px; background: #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; border: 2px dashed #cbd5e1; }
+        .preview-box img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Table Styles */
+        /* Table & Layout */
         .table-container { overflow-x: auto; margin-top: 16px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
         th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
         th { background: #f1f5f9; font-weight: 600; }
-        
-        /* Tabs */
         .tabs { display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 16px; }
         .tab-btn { padding: 8px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 600; color: #64748b; }
         .tab-btn.active { border-color: var(--primary-color); color: var(--primary-color); }
-        
-        /* Modal Overlay */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 24px; border-radius: 8px; width: 100%; max-width: 400px; }
+        .modal-content { background: white; padding: 24px; border-radius: 8px; width: 90%; max-width: 400px; }
     </style>
 </head>
 <body>
 
 <div class="container" id="appContainer">
-    <!-- Header -->
-    <h2 id="headerTitle">BM CARWASH & LAUNDRY</h2>
-    <p id="headerSubtitle" class="subtitle">Masuk ke akun Anda untuk melanjutkan</p>
+    <h2 id="headerTitle">BM CARWASH</h2>
+    <p id="headerSubtitle" class="subtitle">Portal Absensi Karyawan</p>
 
-    <!-- Alert Box -->
     <div id="alertBox" class="alert hidden"></div>
 
     <!-- 1. LOGIN VIEW -->
@@ -96,23 +90,24 @@
         </div>
 
         <div id="menuAbsenSection">
-            <button id="startAbsenBtn" class="btn btn-primary">📷 Ambil Foto Absen</button>
-            <button onclick="logout()" class="btn btn-outline" style="margin-top: 8px;">Keluar</button>
+            <button id="startAbsenBtn" class="btn btn-primary">📷 Absen Kehadiran</button>
+            <button onclick="logout()" class="btn btn-outline">Keluar</button>
         </div>
 
         <div id="absenFormSection" class="hidden">
             <form id="absenForm">
-                <div class="camera-box">
-                    <video id="webcam" autoplay playsinline></video>
-                    <canvas id="canvas" class="hidden"></canvas>
+                <!-- Area Pratinjau Foto -->
+                <div class="preview-box">
+                    <img id="photoPreview" class="hidden" src="" alt="Pratinjau Foto">
+                    <p id="photoPlaceholder" style="color: #64748b; font-size: 0.9rem;">Belum ada foto diambil</p>
                 </div>
 
-                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                    <button type="button" id="takePhotoBtn" class="btn btn-primary">📸 Ambil Foto</button>
-                    <button type="button" id="retakePhotoBtn" class="btn btn-secondary hidden">🔄 Foto Ulang</button>
-                </div>
+                <!-- Input Kamera HP (Panggil Kamera Asli Smartphone) -->
+                <input type="file" id="nativeCameraInput" accept="image/*" capture="user" class="hidden">
+                
+                <button type="button" id="openCameraBtn" class="btn btn-primary">📸 Ambil Foto Selfie</button>
 
-                <p id="radiusStatus" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 12px;"></p>
+                <p id="radiusStatus" style="font-size: 0.85rem; font-weight: 600; margin: 12px 0; text-align: center;"></p>
                 <input type="hidden" id="gpsLocation">
 
                 <button type="submit" id="submitAbsenBtn" class="btn btn-primary" disabled>Kirim Absensi Kehadiran</button>
@@ -137,14 +132,12 @@
             </div>
         </div>
 
-        <!-- Navigation Tabs -->
         <div class="tabs">
             <button id="tabRekapBtn" class="tab-btn active">Rekap Gaji</button>
             <button id="tabLogBtn" class="tab-btn">Log Absensi</button>
             <button id="tabUsersBtn" class="tab-btn">Kelola Karyawan</button>
         </div>
 
-        <!-- Tab 1: Rekap Section -->
         <div id="rekapSection">
             <div class="table-container">
                 <table>
@@ -162,7 +155,6 @@
             </div>
         </div>
 
-        <!-- Tab 2: Log Section -->
         <div id="logSection" class="hidden">
             <div style="margin-bottom: 8px; display: flex; gap: 8px;">
                 <button id="deleteRangeLogBtn" class="btn btn-danger" style="width: auto;">🗓️ Hapus Log Periode Ini</button>
@@ -189,7 +181,6 @@
             </div>
         </div>
 
-        <!-- Tab 3: Users Section -->
         <div id="usersSection" class="hidden">
             <button onclick="openUserModal()" class="btn btn-primary" style="width: auto; margin-bottom: 12px;">➕ Tambah Karyawan Baru</button>
             <div class="table-container">
@@ -211,7 +202,7 @@
     </div>
 </div>
 
-<!-- MODAL: Edit Log Absensi -->
+<!-- MODALS -->
 <div id="editLogModal" class="modal hidden">
     <div class="modal-content">
         <h3>Edit Data Absensi</h3>
@@ -238,7 +229,6 @@
     </div>
 </div>
 
-<!-- MODAL: Tambah / Edit User -->
 <div id="userModal" class="modal hidden">
     <div class="modal-content">
         <h3 id="userModalTitle">Tambah User</h3>
@@ -281,8 +271,37 @@
 
 <script>
 // ==========================================
-// 1. FUNGSI UTAMA & UTILITY
+// KONFIGURASI UTAMA
 // ==========================================
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUNwU45rgFZrC_eUNSucRaLPcWXJUBSRvdjBX1h9wRG9E__M7ay-QqwvvmhnyPyrc/exec";
+const OFFICE_LAT = 0.507790;
+const OFFICE_LNG = 122.301510;
+const MAX_RADIUS_METERS = 100;
+
+let currentUser = null;
+let photoData = "-";
+let isWithinRadius = false;
+let cachedUsersData = [];
+let hasAbsenToday = false;
+
+// DOM Elements
+const appContainer = document.getElementById('appContainer');
+const loginView = document.getElementById('loginView');
+const userDashboardView = document.getElementById('userDashboardView');
+const menuAbsenSection = document.getElementById('menuAbsenSection');
+const absenFormSection = document.getElementById('absenFormSection');
+const adminView = document.getElementById('adminView');
+
+const openCameraBtn = document.getElementById('openCameraBtn');
+const nativeCameraInput = document.getElementById('nativeCameraInput');
+const photoPreview = document.getElementById('photoPreview');
+const photoPlaceholder = document.getElementById('photoPlaceholder');
+
+const gpsInput = document.getElementById('gpsLocation');
+const radiusStatus = document.getElementById('radiusStatus');
+const submitAbsenBtn = document.getElementById('submitAbsenBtn');
+
+// Helper Functions
 function setLoading(isLoading, btnId, text) {
     const btn = document.getElementById(btnId);
     if (btn) {
@@ -307,932 +326,220 @@ function formatRupiah(angka) {
     return new Intl.NumberFormat('id-ID').format(angka || 0);
 }
 
-// ==========================================
-// 2. KONFIGURASI & DEKLARASI VARIABEL UTAMA
-// ==========================================
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUNwU45rgFZrC_eUNSucRaLPcWXJUBSRvdjBX1h9wRG9E__M7ay-QqwvvmhnyPyrc/exec";
-
-// --- Pengaturan Koordinat Outlet & Radius Absensi ---
-const OFFICE_LAT = 0.507790;    // Latitude Lokasi Usaha
-const OFFICE_LNG = 122.301510;  // Longitude Lokasi Usaha
-const MAX_RADIUS_METERS = 100;  // Batas radius maksimal dalam meter
-
-// --- Deklarasi Variabel State ---
-let currentUser = null;
-let photoData = "-";
-let videoStream = null;
-let isWithinRadius = false;
-let cachedUsersData = [];
-let hasAbsenToday = false; // Flag status absen hari ini
-
-// --- Inisialisasi Elemen DOM ---
-const appContainer = document.getElementById('appContainer');
-const loginView = document.getElementById('loginView');
-const userDashboardView = document.getElementById('userDashboardView');
-const menuAbsenSection = document.getElementById('menuAbsenSection');
-const absenFormSection = document.getElementById('absenFormSection');
-const adminView = document.getElementById('adminView');
-const startDateInput = document.getElementById('startDate');
-const endDateInput = document.getElementById('endDate');
-
-const video = document.getElementById('webcam') || document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const takePhotoBtn = document.getElementById('takePhotoBtn');
-const retakePhotoBtn = document.getElementById('retakePhotoBtn');
-const gpsInput = document.getElementById('gpsLocation') || document.getElementById('gpsInput');
-const radiusStatus = document.getElementById('radiusStatus');
-const submitAbsenBtn = document.getElementById('submitAbsenBtn');
-
-// Tanggal Default (30 hari terakhir hingga hari ini)
-const today = new Date();
-const defaultStart = new Date();
-defaultStart.setDate(today.getDate() - 30);
-
-const formatDateForInput = (d) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
-
-if (startDateInput) startDateInput.value = formatDateForInput(defaultStart);
-if (endDateInput) endDateInput.value = formatDateForInput(today);
-
-// Toggle Password Visibility
-const passwordInput = document.getElementById('password');
-const togglePasswordBtn = document.getElementById('togglePasswordBtn');
-const eyeIcon = document.getElementById('eyeIcon');
-
-if (togglePasswordBtn && passwordInput && eyeIcon) {
-    togglePasswordBtn.addEventListener('click', function () {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        if (type === 'text') {
-            eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.025 10.025 0 012.122-.363c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411M3 3l18 18" />`;
-        } else {
-            eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
-        }
-    });
-}
-
-// ==========================================
-// 3. FUNGSI LOGIKA ABSENSI & GEOLOKASI
-// ==========================================
-function lockAbsenFeature(status) {
-    hasAbsenToday = status;
-    const startAbsenBtn = document.getElementById('startAbsenBtn');
-
-    if (hasAbsenToday) {
-        stopCamera(); // Menghentikan kamera jika aktif
-
-        if (startAbsenBtn) {
-            startAbsenBtn.disabled = true;
-            startAbsenBtn.style.opacity = '0.6';
-            startAbsenBtn.style.cursor = 'not-allowed';
-            startAbsenBtn.innerText = '🔒 Sudah Absen Hari Ini';
-        }
-    } else {
-        if (startAbsenBtn) {
-            startAbsenBtn.disabled = false;
-            startAbsenBtn.style.opacity = '1';
-            startAbsenBtn.style.cursor = 'pointer';
-            startAbsenBtn.innerText = '📷 Ambil Foto Absen';
-        }
-    }
-}
-
-// Hitung Jarak Haversine (Dalam meter)
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3;
     const rad1 = lat1 * Math.PI / 180;
     const rad2 = lat2 * Math.PI / 180;
     const dRad = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-
-    const a = Math.sin(dRad / 2) * Math.sin(dRad / 2) +
-        Math.cos(rad1) * Math.cos(rad2) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return Math.round(R * c);
+    const a = Math.sin(dRad / 2) * Math.sin(dRad / 2) + Math.cos(rad1) * Math.cos(rad2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))));
 }
 
-// HTTP POST Request Handler
 async function sendRequest(payload) {
     try {
-        if (typeof SCRIPT_URL === 'undefined') {
-            throw new Error('SCRIPT_URL belum didefinisikan.');
-        }
         const response = await fetch(SCRIPT_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload)
         });
-        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         return await response.json();
     } catch (error) {
-        console.error('API Error:', error);
-        return { status: 'error', message: error.message || 'Koneksi ke Apps Script gagal.' };
+        return { status: 'error', message: 'Koneksi ke Apps Script gagal.' };
     }
 }
 
-// Login Submit Handler
-const loginForm = document.getElementById('loginForm');
-if (loginForm) {
-    loginForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        setLoading(true, 'loginBtn', 'Proses Login...');
+// ==========================================
+// LOGIKA KAMERA HP BAWAAN
+// ==========================================
+openCameraBtn.addEventListener('click', () => {
+    nativeCameraInput.click(); // Buka aplikasi kamera bawaan HP
+});
 
-        try {
-            const res = await sendRequest({
-                action: 'login',
-                username: document.getElementById('username').value.trim(),
-                password: document.getElementById('password').value.trim()
-            });
+nativeCameraInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            // Kompresi sederhana menggunakan canvas
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const maxWidth = 640;
+                const scale = maxWidth / img.width;
+                
+                canvas.width = maxWidth;
+                canvas.height = img.height * scale;
+                
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                photoData = canvas.toDataURL('image/jpeg', 0.6); // Simpan hasil gambar
 
-            if (res.status === 'success') {
-                currentUser = res.user;
-                if (loginView) loginView.classList.add('hidden');
-                showAlert('', 'hide');
-
-                if (String(currentUser.role).toLowerCase() === 'admin') {
-                    if (appContainer) appContainer.classList.add('wide');
-                    document.getElementById('headerTitle').innerText = "Dashboard Admin";
-                    document.getElementById('headerSubtitle').innerText = "Rekapitulasi Penggajian & Absensi";
-                    if (adminView) adminView.classList.remove('hidden');
-                    loadAdminData();
-                } else {
-                    document.getElementById('headerTitle').innerText = "BM CARWASH";
-                    document.getElementById('headerSubtitle').innerText = "Portal Absensi Karyawan";
-                    document.getElementById('displayName').innerText = currentUser.nama || '-';
-                    document.getElementById('displayDivisi').innerText = currentUser.divisi || '-';
-                    if (userDashboardView) userDashboardView.classList.remove('hidden');
-
-                    // Periksa status apakah sudah absen hari ini dari response backend
-                    lockAbsenFeature(res.hasAbsenToday || false);
-                }
-            } else {
-                showAlert(res.message, 'error');
-            }
-        } catch (err) {
-            showAlert('Gagal terhubung ke server.', 'error');
-        } finally {
-            setLoading(false, 'loginBtn', 'Masuk');
-        }
-    });
-}
-
-// Absen Handlers
-const startAbsenBtn = document.getElementById('startAbsenBtn');
-if (startAbsenBtn) {
-    startAbsenBtn.addEventListener('click', () => {
-        if (hasAbsenToday) {
-            showAlert('Anda sudah melakukan absensi untuk hari ini.', 'error');
-            return;
-        }
-
-        if (menuAbsenSection) menuAbsenSection.classList.add('hidden');
-        if (absenFormSection) absenFormSection.classList.remove('hidden');
-        
-        // Memanggil GPS & Kamera sekaligus
-        initCameraAndGPS();
-        startCamera(); 
-    });
-}
-
-const cancelAbsenBtn = document.getElementById('cancelAbsenBtn');
-if (cancelAbsenBtn) {
-    cancelAbsenBtn.addEventListener('click', () => {
-        stopCamera();
-        if (absenFormSection) absenFormSection.classList.add('hidden');
-        if (menuAbsenSection) menuAbsenSection.classList.remove('hidden');
-        showAlert('', 'hide');
-    });
-}
-
-function initCameraAndGPS() {
-    if (radiusStatus) {
-        radiusStatus.innerText = "Mengecek lokasi...";
-        radiusStatus.style.color = "#64748b";
+                // Tampilkan Preview
+                photoPreview.src = photoData;
+                photoPreview.classList.remove('hidden');
+                photoPlaceholder.classList.add('hidden');
+                
+                openCameraBtn.innerText = "🔄 Foto Ulang";
+                checkFormValidity();
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
     }
+});
+
+function checkFormValidity() {
+    if (isWithinRadius && photoData !== "-") {
+        submitAbsenBtn.disabled = false;
+    } else {
+        submitAbsenBtn.disabled = true;
+    }
+}
+
+// ==========================================
+// GEOLOKASI & ABSENSI
+// ==========================================
+function initGPS() {
+    radiusStatus.innerText = "Mengecek lokasi GPS...";
+    radiusStatus.style.color = "#64748b";
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 const userLat = pos.coords.latitude;
                 const userLng = pos.coords.longitude;
-                if (gpsInput) gpsInput.value = `https://maps.google.com/?q=${userLat},${userLng}`;
+                gpsInput.value = `https://maps.google.com/?q=${userLat},${userLng}`;
 
-                const targetLat = typeof OFFICE_LAT !== 'undefined' ? OFFICE_LAT : 0;
-                const targetLng = typeof OFFICE_LNG !== 'undefined' ? OFFICE_LNG : 0;
-                const maxRadius = typeof MAX_RADIUS_METERS !== 'undefined' ? MAX_RADIUS_METERS : 100;
+                const distance = calculateDistance(userLat, userLng, OFFICE_LAT, OFFICE_LNG);
 
-                const distance = calculateDistance(userLat, userLng, targetLat, targetLng);
-
-                if (distance <= maxRadius) {
+                if (distance <= MAX_RADIUS_METERS) {
                     isWithinRadius = true;
-                    if (radiusStatus) {
-                        radiusStatus.innerText = `✅ Berada di lokasi usaha (Jarak: ${distance}m)`;
-                        radiusStatus.style.color = "#10b981";
-                    }
-                    if (submitAbsenBtn) submitAbsenBtn.disabled = false;
+                    radiusStatus.innerText = `✅ Berada di lokasi usaha (Jarak: ${distance}m)`;
+                    radiusStatus.style.color = "#10b981";
                 } else {
                     isWithinRadius = false;
-                    if (radiusStatus) {
-                        radiusStatus.innerText = `❌ Di luar radius! Jarak: ${distance}m (Maks: ${maxRadius}m)`;
-                        radiusStatus.style.color = "#ef4444";
-                    }
-                    if (submitAbsenBtn) submitAbsenBtn.disabled = true;
-                }
-            },
-            (err) => {
-                if (gpsInput) gpsInput.value = "GPS Tidak Diizinkan / Mati";
-                if (radiusStatus) {
-                    radiusStatus.innerText = "⚠️ Aktifkan GPS untuk melakukan absensi.";
+                    radiusStatus.innerText = `❌ Di luar radius! Jarak: ${distance}m (Maks: ${MAX_RADIUS_METERS}m)`;
                     radiusStatus.style.color = "#ef4444";
                 }
-                if (submitAbsenBtn) submitAbsenBtn.disabled = true;
+                checkFormValidity();
+            },
+            () => {
+                radiusStatus.innerText = "⚠️ Aktifkan GPS untuk absensi.";
+                radiusStatus.style.color = "#ef4444";
+                submitAbsenBtn.disabled = true;
             },
             { enableHighAccuracy: true }
         );
+    }
+}
+
+// Handlers UI Absensi
+document.getElementById('startAbsenBtn').addEventListener('click', () => {
+    if (hasAbsenToday) {
+        showAlert('Anda sudah melakukan absensi hari ini.', 'error');
+        return;
+    }
+    menuAbsenSection.classList.add('hidden');
+    absenFormSection.classList.remove('hidden');
+    initGPS();
+});
+
+document.getElementById('cancelAbsenBtn').addEventListener('click', () => {
+    absenFormSection.classList.add('hidden');
+    menuAbsenSection.classList.remove('hidden');
+    photoData = "-";
+    photoPreview.classList.add('hidden');
+    photoPlaceholder.classList.remove('hidden');
+    openCameraBtn.innerText = "📸 Ambil Foto Selfie";
+    showAlert('', 'hide');
+});
+
+// Submit Form Absen
+document.getElementById('absenForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!isWithinRadius) return showAlert("Anda berada di luar radius!", "error");
+    if (photoData === "-") return showAlert("Silakan ambil foto terlebih dahulu!", "error");
+
+    setLoading(true, 'submitAbsenBtn', 'Mengirim...');
+
+    const res = await sendRequest({
+        action: 'absen',
+        nama: currentUser ? currentUser.nama : '',
+        divisi: currentUser ? currentUser.divisi : '',
+        gajiPokok: currentUser ? currentUser.gajiPokok : 0,
+        tipe: 'Masuk',
+        status: 'Hadir',
+        potongan: 0,
+        foto: photoData,
+        gps: gpsInput.value
+    });
+
+    if (res.status === 'success') {
+        showAlert(res.message, 'success');
+        hasAbsenToday = true;
+        setTimeout(() => {
+            absenFormSection.classList.add('hidden');
+            menuAbsenSection.classList.remove('hidden');
+            document.getElementById('startAbsenBtn').disabled = true;
+            document.getElementById('startAbsenBtn').innerText = "🔒 Sudah Absen Hari Ini";
+        }, 1500);
     } else {
-        if (gpsInput) gpsInput.value = "GPS Tidak Didukung";
-        if (submitAbsenBtn) submitAbsenBtn.disabled = true;
+        showAlert(res.message, 'error');
     }
-}
+    setLoading(false, 'submitAbsenBtn', 'Kirim Absensi Kehadiran');
+});
 
-// ==========================================
-// 4. KONTROL KAMERA & TANGKAT FOTO
-// ==========================================
-function startCamera() {
-    const videoElem = document.getElementById('webcam');
-    const canvasElem = document.getElementById('canvas');
-    
-    if (canvasElem) canvasElem.classList.add('hidden');
-    if (videoElem) videoElem.classList.remove('hidden');
+// LOGIN
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    setLoading(true, 'loginBtn', 'Proses Login...');
 
-    navigator.mediaDevices.getUserMedia({ 
-        video: { 
-            facingMode: "user",
-            width: { ideal: 640 },
-            height: { ideal: 480 }
-        } 
-    })
-    .then((stream) => {
-        videoStream = stream;
-        if (videoElem) {
-            videoElem.srcObject = stream;
-            videoElem.onloadedmetadata = () => {
-                videoElem.play().catch(e => console.log("Play error:", e));
-            };
-        }
-    })
-    .catch((err) => {
-        showAlert("Gagal mengakses kamera. Pastikan izin kamera telah diberikan.", "error");
+    const res = await sendRequest({
+        action: 'login',
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value.trim()
     });
-}
 
-function stopCamera() {
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
-    }
-}
+    if (res.status === 'success') {
+        currentUser = res.user;
+        loginView.classList.add('hidden');
+        showAlert('', 'hide');
 
-if (takePhotoBtn) {
-    takePhotoBtn.addEventListener('click', () => {
-        const videoElem = document.getElementById('webcam');
-        const canvasElem = document.getElementById('canvas');
-        if (!videoElem || !canvasElem) return;
-
-        if (videoElem.readyState !== 4 || videoElem.videoWidth === 0) {
-            showAlert("Kamera sedang memuat, silakan tunggu sebentar...", "error");
-            return;
-        }
-
-        const context = canvasElem.getContext('2d');
-        const w = videoElem.videoWidth;
-        const h = videoElem.videoHeight;
-        
-        canvasElem.width = w;
-        canvasElem.height = h;
-        
-        context.drawImage(videoElem, 0, 0, w, h);
-        photoData = canvasElem.toDataURL('image/jpeg', 0.6);
-        
-        videoElem.classList.add('hidden');
-        canvasElem.classList.remove('hidden');
-        
-        takePhotoBtn.classList.add('hidden');
-        if (retakePhotoBtn) retakePhotoBtn.classList.remove('hidden');
-    });
-}
-
-if (retakePhotoBtn) {
-    retakePhotoBtn.addEventListener('click', () => {
-        const videoElem = document.getElementById('webcam');
-        const canvasElem = document.getElementById('canvas');
-        
-        photoData = "-";
-        if (canvasElem) canvasElem.classList.add('hidden');
-        if (videoElem) {
-            videoElem.classList.remove('hidden');
-            videoElem.play().catch(e => console.log(e));
-        }
-        retakePhotoBtn.classList.add('hidden');
-        if (takePhotoBtn) takePhotoBtn.classList.remove('hidden');
-    });
-}
-
-// Fallback untuk kamera HP bawaan
-function openNativeCamera() {
-    const cameraInput = document.getElementById('cameraInput');
-    if (cameraInput) {
-        cameraInput.click();
-    }
-}
-
-function previewPhoto(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            photoData = e.target.result;
+        if (String(currentUser.role).toLowerCase() === 'admin') {
+            appContainer.classList.add('wide');
+            adminView.classList.remove('hidden');
+            loadAdminData();
+        } else {
+            document.getElementById('displayName').innerText = currentUser.nama || '-';
+            document.getElementById('displayDivisi').innerText = currentUser.divisi || '-';
+            userDashboardView.classList.remove('hidden');
             
-            const previewImg = document.getElementById('photoPreview');
-            const placeholder = document.getElementById('photoPlaceholder');
-            const takeBtn = document.getElementById('takePhotoBtn');
-
-            if (previewImg && placeholder) {
-                previewImg.src = photoData;
-                previewImg.classList.remove('hidden');
-                placeholder.classList.add('hidden');
+            if (res.hasAbsenToday) {
+                hasAbsenToday = true;
+                const btn = document.getElementById('startAbsenBtn');
+                btn.disabled = true;
+                btn.innerText = "🔒 Sudah Absen Hari Ini";
             }
-
-            if (takeBtn) {
-                takeBtn.innerText = "🔄 Foto Ulang";
-                takeBtn.classList.remove('btn-primary');
-                takeBtn.classList.add('btn-secondary');
-            }
-        };
-        reader.readAsDataURL(file);
+        }
+    } else {
+        showAlert(res.message, 'error');
     }
-}
+    setLoading(false, 'loginBtn', 'Masuk');
+});
 
-// ==========================================
-// 5. FORM SUBMIT ABSENSI
-// ==========================================
-const absenForm = document.getElementById('absenForm');
-if (absenForm) {
-    absenForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        if (hasAbsenToday) {
-            showAlert("Anda sudah melakukan absensi hari ini!", "error");
-            return;
-        }
-
-        if (!isWithinRadius) {
-            showAlert("Anda berada di luar radius lokasi usaha!", "error");
-            return;
-        }
-
-        if (photoData === "-") {
-            showAlert("Silakan ambil foto selfie terlebih dahulu!", "error");
-            return;
-        }
-
-        setLoading(true, 'submitAbsenBtn', 'Mengirim...');
-
-        try {
-            const res = await sendRequest({
-                action: 'absen',
-                nama: currentUser ? currentUser.nama : '',
-                divisi: currentUser ? currentUser.divisi : '',
-                gajiPokok: currentUser ? currentUser.gajiPokok : 0,
-                tipe: 'Masuk',
-                status: 'Hadir',
-                potongan: 0,
-                foto: photoData,
-                gps: gpsInput ? gpsInput.value : ''
-            });
-
-            if (res.status === 'success') {
-                showAlert(res.message, 'success');
-                lockAbsenFeature(true);
-
-                setTimeout(() => {
-                    stopCamera();
-                    if (absenFormSection) absenFormSection.classList.add('hidden');
-                    if (menuAbsenSection) menuAbsenSection.classList.remove('hidden');
-                }, 2000);
-            } else {
-                showAlert(res.message, 'error');
-            }
-        } catch (err) {
-            showAlert('Gagal mengirim absensi.', 'error');
-        } finally {
-            setLoading(false, 'submitAbsenBtn', 'Kirim Absensi Kehadiran');
-        }
-    });
-}
-
-// ==========================================
-// 6. PANEL ADMIN (TAB & LOG DATA)
-// ==========================================
-const tabRekapBtn = document.getElementById('tabRekapBtn');
-const tabLogBtn = document.getElementById('tabLogBtn');
-const tabUsersBtn = document.getElementById('tabUsersBtn');
-
-if (tabRekapBtn) tabRekapBtn.addEventListener('click', function () { switchTab(this, 'rekapSection'); });
-if (tabLogBtn) tabLogBtn.addEventListener('click', function () { switchTab(this, 'logSection'); });
-if (tabUsersBtn) {
-    tabUsersBtn.addEventListener('click', function () {
-        switchTab(this, 'usersSection');
-        loadUsersData();
-    });
-}
-
-function switchTab(activeBtn, targetSectionId) {
-    [tabRekapBtn, tabLogBtn, tabUsersBtn].forEach(btn => {
-        if (btn) btn.classList.remove('active');
-    });
-    if (activeBtn) activeBtn.classList.add('active');
-
-    ['rekapSection', 'logSection', 'usersSection'].forEach(secId => {
-        const sec = document.getElementById(secId);
-        if (sec) sec.classList.add('hidden');
-    });
-
-    const targetSec = document.getElementById(targetSectionId);
-    if (targetSec) targetSec.classList.remove('hidden');
-}
-
-const refreshBtn = document.getElementById('refreshBtn');
-if (refreshBtn) refreshBtn.addEventListener('click', loadAdminData);
-
-async function loadAdminData() {
-    setLoading(true, 'refreshBtn', '...');
-    try {
-        const res = await sendRequest({
-            action: 'getAdminData',
-            startDate: startDateInput ? startDateInput.value : '',
-            endDate: endDateInput ? endDateInput.value : ''
-        });
-
-        if (res.status === 'success') {
-            renderRekapTable(res.rekap);
-            renderLogTable(res.logs);
-            showAlert('', 'hide');
-        } else {
-            showAlert(res.message, 'error');
-        }
-    } catch (err) {
-        showAlert('Gagal mengambil data admin.', 'error');
-    } finally {
-        setLoading(false, 'refreshBtn', 'Tampilkan');
-    }
-}
-
-function renderRekapTable(rekapData) {
-    const tbody = document.getElementById('rekapTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    if (!rekapData || rekapData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data rekap</td></tr>';
-        return;
-    }
-
-    rekapData.forEach(item => {
-        let statusArr = [];
-        if (item.hadir > 0) statusArr.push(`<span style="color:#10b981; font-weight:600;">Hadir: ${item.hadir} Hari</span>`);
-        if (item.pulangCepat > 0) statusArr.push(`<span style="color:#f59e0b; font-weight:600;">Pulang Cepat: ${item.pulangCepat} Hari</span>`);
-        if (item.izin > 0) statusArr.push(`<span style="color:#3b82f6; font-weight:600;">Izin: ${item.izin} Hari</span>`);
-        if (item.sakit > 0) statusArr.push(`<span style="color:#8b5cf6; font-weight:600;">Sakit: ${item.sakit} Hari</span>`);
-        if (item.alfa > 0) statusArr.push(`<span style="color:#ef4444; font-weight:600;">Alfa: ${item.alfa} Hari</span>`);
-
-        const statusStr = statusArr.length > 0 ? statusArr.join(' | ') : '-';
-
-        tbody.innerHTML += `
-            <tr>
-                <td><strong>${item.nama}</strong></td>
-                <td>Rp ${formatRupiah(item.gajiPokok)}</td>
-                <td>${statusStr}</td>
-                <td style="color:#ef4444; font-weight:600;">Rp ${formatRupiah(item.totalPotongan)}</td>
-                <td style="color:#10b981; font-weight:700;">Rp ${formatRupiah(item.gajiAkhir)}</td>
-            </tr>
-        `;
-    });
-}
-
-function renderLogTable(logs) {
-    const tbody = document.getElementById('logTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    if (!logs || logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Tidak ada log absensi pada periode ini</td></tr>';
-        return;
-    }
-
-    logs.forEach(log => {
-        const fotoHtml = (log.foto && log.foto !== '-')
-            ? `<a href="${log.foto}" target="_blank" style="color: #2563eb; text-decoration: underline;">Lihat Foto</a>`
-            : '-';
-
-        const gpsHtml = (log.gps && log.gps !== '-')
-            ? `<a href="${log.gps}" target="_blank" style="color: #2563eb; text-decoration: underline;">Lihat Lokasi</a>`
-            : '-';
-
-        const pot = Number(log.potongan) || 0;
-
-        tbody.innerHTML += `
-            <tr>
-                <td><strong>${log.nama || '-'}</strong></td>
-                <td>${log.divisi || '-'}</td>
-                <td><strong>${log.tipe || 'Masuk'}</strong></td>
-                <td><span class="badge">${log.status || 'Hadir'}</span></td>
-                <td>${log.waktu || '-'}</td>
-                <td>${log.hari || '-'}</td>
-                <td style="color:${pot > 0 ? '#ef4444' : '#10b981'}; font-weight:600;">Rp ${formatRupiah(pot)}</td>
-                <td>${fotoHtml}</td>
-                <td>${gpsHtml}</td>
-                <td class="action-col" style="text-align:center;">
-                    <button class="btn btn-primary" style="padding:4px 8px; font-size:0.8rem; width:auto; margin-right:4px;" onclick="openEditLogModal(${log.rowIndex}, '${log.nama}', '${log.status}', ${pot})">
-                        ✏️ Edit
-                    </button>
-                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem; width:auto;" onclick="deleteSingleLog(${log.rowIndex})">
-                        🗑️ Hapus
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-function openEditLogModal(rowIndex, nama, statusSaatIni, potonganSaatIni) {
-    const editIndex = document.getElementById('editModalRowIndex');
-    const modalNama = document.getElementById('modalNamaKaryawan');
-    const modalStatus = document.getElementById('modalStatusAbsen');
-    const modalPotongan = document.getElementById('modalNominalPotongan');
-    const editModal = document.getElementById('editLogModal');
-
-    if (editIndex) editIndex.value = rowIndex;
-    if (modalNama) modalNama.innerText = nama;
-    if (modalStatus) modalStatus.value = statusSaatIni || 'Hadir';
-    if (modalPotongan) modalPotongan.value = potonganSaatIni || 0;
-    if (editModal) editModal.classList.remove('hidden');
-}
-
-function closeEditLogModal() {
-    const editModal = document.getElementById('editLogModal');
-    if (editModal) editModal.classList.add('hidden');
-}
-
-async function submitEditLog() {
-    const editIndex = document.getElementById('editModalRowIndex');
-    const modalStatus = document.getElementById('modalStatusAbsen');
-    const modalPotongan = document.getElementById('modalNominalPotongan');
-
-    const rowIndex = editIndex ? editIndex.value : '';
-    const statusVal = modalStatus ? modalStatus.value : 'Hadir';
-    const potonganVal = modalPotongan ? Number(modalPotongan.value) || 0 : 0;
-
-    setLoading(true, 'saveEditLogBtn', 'Menyimpan...');
-    try {
-        const res = await sendRequest({
-            action: 'editLogPotongan',
-            rowIndex: rowIndex,
-            status: statusVal,
-            potongan: potonganVal
-        });
-
-        if (res.status === 'success') {
-            showAlert('Data absensi berhasil diperbarui', 'success');
-            closeEditLogModal();
-            loadAdminData();
-        } else {
-            showAlert(res.message, 'error');
-        }
-    } catch (err) {
-        showAlert('Gagal memperbarui data absensi.', 'error');
-    } finally {
-        setLoading(false, 'saveEditLogBtn', 'Simpan');
-    }
-}
-
-async function deleteSingleLog(rowIndex) {
-    if (!confirm('Apakah Anda yakin ingin menghapus baris log ini?')) return;
-
-    setLoading(true, 'refreshBtn', '...');
-    try {
-        const res = await sendRequest({ action: 'deleteLog', rowIndex: rowIndex });
-        if (res.status === 'success') {
-            showAlert('Log berhasil dihapus', 'success');
-            loadAdminData();
-        } else {
-            showAlert(res.message, 'error');
-        }
-    } catch (err) {
-        showAlert('Gagal menghapus log.', 'error');
-    } finally {
-        setLoading(false, 'refreshBtn', 'Tampilkan');
-    }
-}
-
-const deleteRangeLogBtn = document.getElementById('deleteRangeLogBtn');
-if (deleteRangeLogBtn) {
-    deleteRangeLogBtn.addEventListener('click', async function () {
-        const sDate = startDateInput ? startDateInput.value : '';
-        const eDate = endDateInput ? endDateInput.value : '';
-        if (!confirm(`PERINGATAN: Log absensi dari tanggal ${sDate} s/d ${eDate} akan dihapus. Lanjutkan?`)) return;
-
-        setLoading(true, 'deleteRangeLogBtn', 'Proses...');
-        try {
-            const res = await sendRequest({
-                action: 'deleteRangeData',
-                startDate: sDate,
-                endDate: eDate
-            });
-
-            if (res.status === 'success') {
-                showAlert(res.message, 'success');
-                loadAdminData();
-            } else {
-                showAlert(res.message, 'error');
-            }
-        } catch (err) {
-            showAlert('Gagal menghapus data periode.', 'error');
-        } finally {
-            setLoading(false, 'deleteRangeLogBtn', '🗓️ Hapus Log Periode Ini');
-        }
-    });
-}
-
-const deleteAllLogBtn = document.getElementById('deleteAllLogBtn');
-if (deleteAllLogBtn) {
-    deleteAllLogBtn.addEventListener('click', async function () {
-        if (!confirm('PERINGATAN: SEMUA log absensi akan dihapus secara permanen. Lanjutkan?')) return;
-
-        setLoading(true, 'deleteAllLogBtn', 'Proses...');
-        try {
-            const res = await sendRequest({ action: 'deleteAllLogs' });
-            if (res.status === 'success') {
-                showAlert('Semua log absensi berhasil dihapus', 'success');
-                loadAdminData();
-            } else {
-                showAlert(res.message, 'error');
-            }
-        } catch (err) {
-            showAlert('Gagal menghapus semua log.', 'error');
-        } finally {
-            setLoading(false, 'deleteAllLogBtn', '🗑️ Hapus Semua Log');
-        }
-    });
-}
-
-// ==========================================
-// 7. USER MANAGEMENT (CRUD USER)
-// ==========================================
-async function loadUsersData() {
-    try {
-        const res = await sendRequest({ action: 'getUsers' });
-        if (res.status === 'success') {
-            cachedUsersData = res.users;
-            renderUsersTable(res.users);
-        } else {
-            showAlert(res.message, 'error');
-        }
-    } catch (err) {
-        showAlert('Gagal mengambil data pengguna.', 'error');
-    }
-}
-
-function renderUsersTable(users) {
-    const tbody = document.getElementById('usersTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    if (!users || users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data pengguna</td></tr>';
-        return;
-    }
-
-    users.forEach(user => {
-        const userRole = user.role ? String(user.role).toLowerCase() : '';
-        tbody.innerHTML += `
-            <tr>
-                <td><strong>${user.username}</strong></td>
-                <td>${user.nama}</td>
-                <td><span class="badge" style="background:${userRole === 'admin' ? '#ef4444' : '#3b82f6'}; color:white; padding:2px 8px; border-radius:4px; font-size:0.75rem;">${user.role}</span></td>
-                <td>${user.divisi || '-'}</td>
-                <td>Rp ${formatRupiah(user.gajiPokok)}</td>
-                <td class="action-col" style="text-align:center;">
-                    <button class="btn btn-primary" style="padding:4px 8px; font-size:0.8rem; width:auto; margin-right:4px;" onclick="editUserModal(${user.rowIndex})">✏️ Edit</button>
-                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem; width:auto;" onclick="deleteUser(${user.rowIndex})">🗑️ Hapus</button>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-function openUserModal() {
-    const title = document.getElementById('userModalTitle');
-    if (title) title.innerText = "Tambah User Baru";
-    
-    ['modalRowIndex', 'modalUsername', 'modalPassword', 'modalNama', 'modalDivisi', 'modalGajiPokok'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = "";
-    });
-    
-    const roleEl = document.getElementById('modalRole');
-    if (roleEl) roleEl.value = "User";
-
-    const userModal = document.getElementById('userModal');
-    if (userModal) userModal.classList.remove('hidden');
-}
-
-function editUserModal(rowIndex) {
-    const user = cachedUsersData.find(u => u.rowIndex === rowIndex);
-    if (!user) return;
-
-    const title = document.getElementById('userModalTitle');
-    if (title) title.innerText = "Edit User";
-
-    const fields = {
-        'modalRowIndex': user.rowIndex,
-        'modalUsername': user.username,
-        'modalPassword': user.password,
-        'modalNama': user.nama,
-        'modalRole': user.role,
-        'modalDivisi': user.divisi,
-        'modalGajiPokok': user.gajiPokok
-    };
-
-    Object.keys(fields).forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = fields[id] || '';
-    });
-
-    const userModal = document.getElementById('userModal');
-    if (userModal) userModal.classList.remove('hidden');
-}
-
-function closeUserModal() {
-    const userModal = document.getElementById('userModal');
-    if (userModal) userModal.classList.add('hidden');
-}
-
-const userForm = document.getElementById('userForm');
-if (userForm) {
-    userForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const rowIndexEl = document.getElementById('modalRowIndex');
-        const rowIndex = rowIndexEl ? rowIndexEl.value : '';
-        const action = rowIndex ? 'editUser' : 'addUser';
-
-        const payload = {
-            action: action,
-            rowIndex: rowIndex,
-            username: document.getElementById('modalUsername') ? document.getElementById('modalUsername').value.trim() : '',
-            password: document.getElementById('modalPassword') ? document.getElementById('modalPassword').value.trim() : '',
-            nama: document.getElementById('modalNama') ? document.getElementById('modalNama').value.trim() : '',
-            role: document.getElementById('modalRole') ? document.getElementById('modalRole').value : 'User',
-            divisi: document.getElementById('modalDivisi') ? document.getElementById('modalDivisi').value.trim() : '',
-            gajiPokok: document.getElementById('modalGajiPokok') ? document.getElementById('modalGajiPokok').value : 0
-        };
-
-        setLoading(true, 'saveUserBtn', 'Menyimpan...');
-
-        try {
-            const res = await sendRequest(payload);
-            if (res.status === 'success') {
-                showAlert(res.message, 'success');
-                closeUserModal();
-                loadUsersData();
-            } else {
-                showAlert(res.message, 'error');
-            }
-        } catch (err) {
-            showAlert('Gagal menyimpan data user.', 'error');
-        } finally {
-            setLoading(false, 'saveUserBtn', 'Simpan');
-        }
-    });
-}
-
-async function deleteUser(rowIndex) {
-    if (!confirm('Apakah Anda yakin ingin menghapus user ini?')) return;
-
-    try {
-        const res = await sendRequest({ action: 'deleteUser', rowIndex: rowIndex });
-        if (res.status === 'success') {
-            showAlert(res.message, 'success');
-            loadUsersData();
-        } else {
-            showAlert(res.message, 'error');
-        }
-    } catch (err) {
-        showAlert('Gagal menghapus user.', 'error');
-    }
-}
-
-// ==========================================
-// 8. EXPORT DATA (EXCEL & PDF)
-// ==========================================
-const exportExcelBtn = document.getElementById('exportExcelBtn');
-if (exportExcelBtn) {
-    exportExcelBtn.addEventListener('click', function () {
-        if (typeof XLSX === 'undefined') {
-            showAlert('Library SheetJS/XLSX belum terkonfigurasi.', 'error');
-            return;
-        }
-        const isRekap = tabRekapBtn && tabRekapBtn.classList.contains('active');
-        const sheetName = isRekap ? "Rekap_Gaji" : "Log_Absensi";
-        const tableId = isRekap ? "rekapSection" : "logSection";
-        const sVal = startDateInput ? startDateInput.value : '';
-        const eVal = endDateInput ? endDateInput.value : '';
-        const dateRangeStr = `${sVal}_sd_${eVal}`;
-
-        const targetTable = document.querySelector(`#${tableId} table`);
-        if (!targetTable) {
-            showAlert('Tabel data tidak ditemukan.', 'error');
-            return;
-        }
-
-        const table = targetTable.cloneNode(true);
-        const actionCols = table.querySelectorAll('.action-col');
-        actionCols.forEach(col => col.remove());
-
-        const wb = XLSX.utils.table_to_book(table, { sheet: sheetName });
-        XLSX.writeFile(wb, `${sheetName}_${dateRangeStr}.xlsx`);
-    });
-}
-
-const exportPdfBtn = document.getElementById('exportPdfBtn');
-if (exportPdfBtn) {
-    exportPdfBtn.addEventListener('click', function () {
-        if (!window.jspdf) {
-            showAlert('Library jsPDF belum terkonfigurasi.', 'error');
-            return;
-        }
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'pt', 'a4');
-        const isRekap = tabRekapBtn && tabRekapBtn.classList.contains('active');
-        const title = isRekap ? "Laporan Rekapitulasi Gaji" : "Laporan Log Absensi";
-        const sVal = startDateInput ? startDateInput.value : '';
-        const eVal = endDateInput ? endDateInput.value : '';
-        const dateRangeStr = `${sVal} s/d ${eVal}`;
-
-        doc.setFontSize(14);
-        doc.text(`${title}`, 40, 40);
-        doc.setFontSize(10);
-        doc.text(`Periode: ${dateRangeStr}`, 40, 55);
-
-        doc.autoTable({
-            html: isRekap ? '#rekapSection table' : '#logSection table',
-            startY: 70,
-            styles: { fontSize: 8 },
-            columns: isRekap ? undefined : [0, 1, 2, 3, 4, 5, 6, 7, 8]
-        });
-
-        doc.save(`${title}_${sVal}_sd_${eVal}.pdf`);
-    });
-}
-
-// ==========================================
-// 9. LOGOUT
-// ==========================================
 function logout() {
-    stopCamera();
     currentUser = null;
     photoData = "-";
-    isWithinRadius = false;
-    if (appContainer) appContainer.classList.remove('wide');
-    if (adminView) adminView.classList.add('hidden');
-    if (userDashboardView) userDashboardView.classList.add('hidden');
-    if (absenFormSection) absenFormSection.classList.add('hidden');
-    if (menuAbsenSection) menuAbsenSection.classList.remove('hidden');
-    if (loginView) loginView.classList.remove('hidden');
-    
-    const lForm = document.getElementById('loginForm');
-    if (lForm) lForm.reset();
-    
+    appContainer.classList.remove('wide');
+    adminView.classList.add('hidden');
+    userDashboardView.classList.add('hidden');
+    absenFormSection.classList.add('hidden');
+    menuAbsenSection.classList.remove('hidden');
+    loginView.classList.remove('hidden');
+    document.getElementById('loginForm').reset();
     showAlert('', 'hide');
-    const hTitle = document.getElementById('headerTitle');
-    const hSub = document.getElementById('headerSubtitle');
-    if (hTitle) hTitle.innerText = "BM CARWASH & LAUNDRY";
-    if (hSub) hSub.innerText = "Masuk ke akun Anda untuk melanjutkan";
-
-    const pwdInput = document.getElementById('password');
-    const eye = document.getElementById('eyeIcon');
-    if (pwdInput) pwdInput.setAttribute('type', 'password');
-    if (eye) {
-        eye.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
-    }
 }
 </script>
-
 </body>
 </html>
