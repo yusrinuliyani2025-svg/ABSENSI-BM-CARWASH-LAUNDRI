@@ -230,26 +230,35 @@
 
                     <div class="form-group">
     <label>Foto Selfie Absensi</label>
-    <div class="camera-container">
-        <!-- Tambahkan atribut 'muted' di bawah ini -->
-        <video id="webcam" autoplay playsinline muted style="width: 100%; max-height: 250px; object-fit: cover;"></video>
-        <canvas id="canvas" class="hidden"></canvas>
+    
+    <!-- Input File Kamera (Disembunyikan, dipicu via JavaScript/tombol) -->
+    <input type="file" id="cameraInput" accept="image/*" capture="user" style="display: none;" onchange="previewPhoto(event)">
+    
+    <!-- Area Tampilan / Preview Foto -->
+    <div class="camera-container text-center" style="margin-bottom: 10px;">
+        <!-- Tampilan Placeholder jika belum mengambil foto -->
+        <div id="photoPlaceholder" style="width: 100%; height: 200px; background-color: #e9ecef; border: 2px dashed #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #6c757d;">
+            <span>Foto belum diambil</span>
+        </div>
+        
+        <!-- Element Gambar Hasil Foto Selfie -->
+        <img id="photoPreview" src="" alt="Preview Selfie" class="hidden" style="width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
     </div>
-    <button type="button" class="btn btn-primary" id="takePhotoBtn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 5px;">Ambil Foto</button>
-    <button type="button" class="btn btn-danger hidden" id="retakePhotoBtn" style="padding: 8px; font-size: 0.85rem; margin-bottom: 5px;">Foto Ulang</button>
+
+    <!-- Tombol Buka Kamera / Foto Ulang -->
+    <button type="button" class="btn btn-primary" id="takePhotoBtn" onclick="openNativeCamera()" style="padding: 8px; font-size: 0.85rem; margin-bottom: 5px; width: 100%;">
+        📸 Ambil Foto Selfie
+    </button>
 </div>
 
-                    <div class="form-group">
-                        <label>Status & Lokasi GPS</label>
-                        <input type="text" id="gpsLocation" class="input-control" placeholder="Mendeteksi lokasi..." readonly required>
-                        <p id="radiusStatus" style="font-size:0.8rem; margin-top:5px; font-weight:600;"></p>
-                    </div>
+<div class="form-group">
+    <label>Status & Lokasi GPS</label>
+    <input type="text" id="gpsLocation" class="input-control" placeholder="Mendeteksi lokasi..." readonly required>
+    <p id="radiusStatus" style="font-size:0.8rem; margin-top:5px; font-weight:600;"></p>
+</div>
 
-                    <button type="submit" class="btn btn-primary" id="submitAbsenBtn" disabled>Kirim Absensi Kehadiran</button>
-                    <button type="button" class="btn btn-danger" style="margin-top:10px;" id="cancelAbsenBtn">Batal</button>
-                </form>
-            </div>
-        </div>
+<button type="submit" class="btn btn-primary" id="submitAbsenBtn" disabled>Kirim Absensi Kehadiran</button>
+<button type="button" class="btn btn-danger" style="margin-top:10px;" id="cancelAbsenBtn">Batal</button>
 
         <!-- VIEW ADMIN -->
         <div id="adminView" class="hidden">
@@ -1430,6 +1439,42 @@ function showAlert(msg, type) {
     alertBox.className = `alert alert-${type}`;
     alertBox.classList.remove('hidden');
 } // <--- Cukup 1 kurung kurawal tutup saja di sini
+
+// Fungsi untuk memicu kamera bawaan perangkat
+function openNativeCamera() {
+    const cameraInput = document.getElementById('cameraInput');
+    if (cameraInput) {
+        cameraInput.click();
+    }
+}
+
+// Fungsi untuk menangkap file dari kamera dan menampilkannya di preview
+function previewPhoto(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            photoData = e.target.result; // Menyimpan Base64 foto
+            
+            const previewImg = document.getElementById('photoPreview');
+            const placeholder = document.getElementById('photoPlaceholder');
+            const takeBtn = document.getElementById('takePhotoBtn');
+
+            if (previewImg && placeholder) {
+                previewImg.src = photoData;
+                previewImg.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            }
+
+            if (takeBtn) {
+                takeBtn.innerText = "🔄 Foto Ulang";
+                takeBtn.classList.remove('btn-primary');
+                takeBtn.classList.add('btn-secondary');
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
 
 </script>
 
