@@ -411,6 +411,30 @@ function setLoading(isLoading, btnId, text) {
     }
 }
 <script>
+
+    <script>
+// ==========================================
+// PASTE FUNGSI HELPER INI DI PALING ATAS SCRIPT
+// ==========================================
+function setLoading(isLoading, btnId, text) {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+        btn.disabled = isLoading;
+        btn.innerText = text;
+    }
+}
+
+function showAlert(msg, type) {
+    const alertBox = document.getElementById('alertBox');
+    if (!alertBox) return;
+    if (type === 'hide') {
+        alertBox.classList.add('hidden');
+        return;
+    }
+    alertBox.innerText = msg;
+    alertBox.className = `alert alert-${type}`;
+    alertBox.classList.remove('hidden');
+}
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUNwU45rgFZrC_eUNSucRaLPcWXJUBSRvdjBX1h9wRG9E__M7ay-QqwvvmhnyPyrc/exec";
 
     // --- PENGATURAN KOORDINAT OUTLET & RADIUS ABSENSI ---
