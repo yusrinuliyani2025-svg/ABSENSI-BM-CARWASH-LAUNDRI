@@ -598,100 +598,113 @@ function showAlert(msg, type) {
         });
     }
 
-    // Absen Handlers
-    const startAbsenBtn = document.getElementById('startAbsenBtn');
-    if (startAbsenBtn) {
-        startAbsenBtn.addEventListener('click', () => {
-            // Cek pencegahan jika user sudah absen
-            if (hasAbsenToday) {
-                showAlert('Anda sudah melakukan absensi untuk hari ini.', 'error');
-                return;
-            }
-
-            if (menuAbsenSection) menuAbsenSection.classList.add('hidden');
-            if (absenFormSection) absenFormSection.classList.remove('hidden');
-            initCameraAndGPS();
-        });
-    }
-
-    const cancelAbsenBtn = document.getElementById('cancelAbsenBtn');
-    if (cancelAbsenBtn) {
-        cancelAbsenBtn.addEventListener('click', () => {
-            stopCamera();
-            if (absenFormSection) absenFormSection.classList.add('hidden');
-            if (menuAbsenSection) menuAbsenSection.classList.remove('hidden');
-            showAlert('', 'hide');
-        });
-    }
-
-    function initCameraAndGPS() {
-        if (radiusStatus) {
-            radiusStatus.innerText = "Mengecek lokasi...";
-            radiusStatus.style.color = "#64748b";
+   // Absen Handlers
+const startAbsenBtn = document.getElementById('startAbsenBtn');
+if (startAbsenBtn) {
+    startAbsenBtn.addEventListener('click', () => {
+        // Cek pencegahan jika user sudah absen
+        if (hasAbsenToday) {
+            showAlert('Anda sudah melakukan absensi untuk hari ini.', 'error');
+            return;
         }
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const userLat = pos.coords.latitude;
-                    const userLng = pos.coords.longitude;
-                    if (gpsInput) gpsInput.value = `https://maps.google.com/?q=${userLat},${userLng}`;
+        if (menuAbsenSection) menuAbsenSection.classList.add('hidden');
+        if (absenFormSection) absenFormSection.classList.remove('hidden');
+        
+        // Memanggil GPS & Kamera sekaligus
+        initCameraAndGPS();
+        startCamera(); 
+    });
+}
 
-                    const targetLat = typeof OFFICE_LAT !== 'undefined' ? OFFICE_LAT : 0;
-                    const targetLng = typeof OFFICE_LNG !== 'undefined' ? OFFICE_LNG : 0;
-                    const maxRadius = typeof MAX_RADIUS_METERS !== 'undefined' ? MAX_RADIUS_METERS : 100;
+const cancelAbsenBtn = document.getElementById('cancelAbsenBtn');
+if (cancelAbsenBtn) {
+    cancelAbsenBtn.addEventListener('click', () => {
+        stopCamera();
+        if (absenFormSection) absenFormSection.classList.add('hidden');
+        if (menuAbsenSection) menuAbsenSection.classList.remove('hidden');
+        showAlert('', 'hide');
+    });
+}
 
-                    const distance = calculateDistance(userLat, userLng, targetLat, targetLng);
+function initCameraAndGPS() {
+    if (radiusStatus) {
+        radiusStatus.innerText = "Mengecek lokasi...";
+        radiusStatus.style.color = "#64748b";
+    }
 
-                    if (distance <= maxRadius) {
-                        isWithinRadius = true;
-                        if (radiusStatus) {
-                            radiusStatus.innerText = `✅ Berada di lokasi usaha (Jarak: ${distance}m)`;
-                            radiusStatus.style.color = "#10b981";
-                        }
-                        if (submitAbsenBtn) submitAbsenBtn.disabled = false;
-                    } else {
-                        isWithinRadius = false;
-                        if (radiusStatus) {
-                            radiusStatus.innerText = `❌ Di luar radius! Jarak: ${distance}m (Maks: ${maxRadius}m)`;
-                            radiusStatus.style.color = "#ef4444";
-                        }
-                        if (submitAbsenBtn) submitAbsenBtn.disabled = true;
-                    }
-                },
-                (err) => {
-                    if (gpsInput) gpsInput.value = "GPS Tidak Diizinkan / Mati";
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const userLat = pos.coords.latitude;
+                const userLng = pos.coords.longitude;
+                if (gpsInput) gpsInput.value = `https://maps.google.com/?q=${userLat},${userLng}`;
+
+                const targetLat = typeof OFFICE_LAT !== 'undefined' ? OFFICE_LAT : 0;
+                const targetLng = typeof OFFICE_LNG !== 'undefined' ? OFFICE_LNG : 0;
+                const maxRadius = typeof MAX_RADIUS_METERS !== 'undefined' ? MAX_RADIUS_METERS : 100;
+
+                const distance = calculateDistance(userLat, userLng, targetLat, targetLng);
+
+                if (distance <= maxRadius) {
+                    isWithinRadius = true;
                     if (radiusStatus) {
-                        radiusStatus.innerText = "⚠️ Aktifkan GPS untuk melakukan absensi.";
+                        radiusStatus.innerText = `✅ Berada di lokasi usaha (Jarak: ${distance}m)`;
+                        radiusStatus.style.color = "#10b981";
+                    }
+                    if (submitAbsenBtn) submitAbsenBtn.disabled = false;
+                } else {
+                    isWithinRadius = false;
+                    if (radiusStatus) {
+                        radiusStatus.innerText = `❌ Di luar radius! Jarak: ${distance}m (Maks: ${maxRadius}m)`;
                         radiusStatus.style.color = "#ef4444";
                     }
                     if (submitAbsenBtn) submitAbsenBtn.disabled = true;
-                },
-                { enableHighAccuracy: true }
-            );
-        } else {
-            if (gpsInput) gpsInput.value = "GPS Tidak Didukung";
-            if (submitAbsenBtn) submitAbsenBtn.disabled = true;
-        }
+                }
+            },
+            (err) => {
+                if (gpsInput) gpsInput.value = "GPS Tidak Diizinkan / Mati";
+                if (radiusStatus) {
+                    radiusStatus.innerText = "⚠️ Aktifkan GPS untuk melakukan absensi.";
+                    radiusStatus.style.color = "#ef4444";
+                }
+                if (submitAbsenBtn) submitAbsenBtn.disabled = true;
+            },
+            { enableHighAccuracy: true }
+        );
+    } else {
+        if (gpsInput) gpsInput.value = "GPS Tidak Didukung";
+        if (submitAbsenBtn) submitAbsenBtn.disabled = true;
+    }
+}
 
-       // ==========================================
-// KODE UTAMA ABSENSI, KAMERA, & MANAGEMENT
-// ==========================================
-
+// --- BUKA KAMERA OTOMATIS (MENGGUNAKAN ID 'webcam') ---
 function startCamera() {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-        .then((stream) => {
-            videoStream = stream;
-            if (video) {
-                video.srcObject = stream;
-                video.play().catch((err) => {
-                    console.log("Autoplay error:", err);
-                });
-            }
-        })
-        .catch((err) => {
-            showAlert("Gagal mengakses kamera.", "error");
-        });
+    const video = document.getElementById('webcam'); // Disesuaikan dengan HTML
+    const canvas = document.getElementById('canvas');
+    
+    if (canvas) canvas.classList.add('hidden');
+    if (video) video.classList.remove('hidden');
+
+    navigator.mediaDevices.getUserMedia({ 
+        video: { 
+            facingMode: "user",
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+        } 
+    })
+    .then((stream) => {
+        videoStream = stream;
+        if (video) {
+            video.srcObject = stream;
+            video.onloadedmetadata = () => {
+                video.play().catch(e => console.log("Play error:", e));
+            };
+        }
+    })
+    .catch((err) => {
+        showAlert("Gagal mengakses kamera. Pastikan izin kamera telah diberikan.", "error");
+    });
 }
 
 function stopCamera() {
@@ -701,28 +714,42 @@ function stopCamera() {
     }
 }
 
+// --- TOMBOL AMBIL FOTO (MENGGUNAKAN ID 'webcam') ---
 if (takePhotoBtn) {
     takePhotoBtn.addEventListener('click', () => {
+        const video = document.getElementById('webcam'); // Disesuaikan dengan HTML
+        const canvas = document.getElementById('canvas');
         if (!video || !canvas) return;
+
+        if (video.readyState !== 4 || video.videoWidth === 0) {
+            showAlert("Kamera sedang memuat, silakan tunggu sebentar...", "error");
+            return;
+        }
+
         const context = canvas.getContext('2d');
+        const w = video.videoWidth;
+        const h = video.videoHeight;
         
-        const w = video.videoWidth > 0 ? video.videoWidth : 640;
-        const h = video.videoHeight > 0 ? video.videoHeight : 480;
         canvas.width = w;
         canvas.height = h;
         
         context.drawImage(video, 0, 0, w, h);
-
         photoData = canvas.toDataURL('image/jpeg', 0.6);
+        
         video.classList.add('hidden');
         canvas.classList.remove('hidden');
+        
         takePhotoBtn.classList.add('hidden');
         if (retakePhotoBtn) retakePhotoBtn.classList.remove('hidden');
     });
 }
 
+// --- TOMBOL FOTO ULANG (MENGGUNAKAN ID 'webcam') ---
 if (retakePhotoBtn) {
     retakePhotoBtn.addEventListener('click', () => {
+        const video = document.getElementById('webcam'); // Disesuaikan dengan HTML
+        const canvas = document.getElementById('canvas');
+        
         photoData = "-";
         if (canvas) canvas.classList.add('hidden');
         if (video) {
@@ -788,7 +815,6 @@ if (absenForm) {
         }
     });
 }
-
 // --- TAB MANAGEMENT ---
 const tabRekapBtn = document.getElementById('tabRekapBtn');
 const tabLogBtn = document.getElementById('tabLogBtn');
